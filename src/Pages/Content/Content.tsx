@@ -62,9 +62,10 @@ export default function ContentTable() {
         },
         {
             accessorKey: "title",
-            header: () => <div className="text-center">Video</div>,
+            header: () => <div className="text-left">Videos</div>,
             cell: ({ row }) => (
-                <div className="text-center">
+                <div className="flex justify-stretch items-center gap-2">
+                    <span className="h-14 w-24 rounded-2xl bg-[#4C2C22]"></span>
                     <span>{row.original.title}</span>
                 </div>
             ),
