@@ -1,6 +1,7 @@
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PrivacyPolicyEditor from './Privacy';
+import TermsEditor from './Terms';
 
 const SettingsHome = () => {
     return (
@@ -13,7 +14,7 @@ const SettingsHome = () => {
                 </TabsList>
                 <Separator className='my-0' />
                 <TabsContent value="privacy"><PrivacyPolicyEditor/></TabsContent>
-                <TabsContent value="terms">cccccccc</TabsContent>
+                <TabsContent value="terms"><TermsEditor/></TabsContent>
             </Tabs>
         </main>
     );

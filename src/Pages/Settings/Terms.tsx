@@ -3,29 +3,29 @@ import React, { useState, useRef, useMemo } from 'react';
 import JoditEditor from 'jodit-react';
 import { Button } from '@/components/ui/button';
 
-const PrivacyPolicyEditor: React.FC = () => {
+const TermsEditor: React.FC = () => {
   const editor = useRef(null);
   const [content, setContent] = useState(`
     <h2><strong>Effective Date: 1st September 2025</strong></h2>
-    <p>morningwood.com, Our values your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our Web application and related services.</p>
+    <p>Welcome to morningwood by using our website or app, you agree to these terms.</p>
     
-    <p><strong>1. Information We Collect</strong><br>
-    We may collect details like your name, email, username, and usage activity when you create an account, stream content, or interact with other users.</p>
+    <p><strong>1. Using Our Service</strong><br>
+    You must be at least 13 years old to use the platform.You agree not to share illegal, hateful, or copyrighted content.</p>
     
-    <p><strong>2. How We Use Your Information</strong><br>
-    Your information is used to:</p>
-    <ul>
-      <li>Personalize your experience</li>
-      <li>Improve platform performance</li>
-      <li>Send important updates or security alerts</li>
-      <li>Prevent fraud or misuse</li>
-    </ul>
+    <p><strong>2. Account Responsibilities</strong><br>
+    Keep your login credentials secure.You are responsible for any activity done through your account.</p>
+
+    <p><strong>3. Content Ownership</strong><br>
+    Creators retain ownership of their content, but grant us permission to display it on the platform.</p>
     
-    <p><strong>3. Data Sharing</strong><br>
-    We don't sell your data. Limited information may be shared only with trusted service providers to operate the platform securely.</p>
-    
-    <p><strong>4 Your Choices</strong><br>
-    You can edit or delete your profile, adjust notification preferences, and manage your privacy settings anytime.</p>
+    <p><strong>4. Payments & Subscriptions</strong><br>
+    If applicable, subscriptions or tips are processed securely through our payment partners.</p>
+    <p><strong>5. Termination</strong><br>
+    We reserve the right to suspend or remove accounts that violate our community guidelines.</p>
+    <p><strong>6. Limitation of Liability</strong><br>
+    We are not liable for losses or damages caused by user content, downtime, or unauthorized access.</p>
+    <p><strong>7. Changes to Terms</strong><br>
+    We may update these terms at any time. Continued use of the platform means you accept the updated terms.</p>
   `);
 
   const config = useMemo(
@@ -253,4 +253,4 @@ const PrivacyPolicyEditor: React.FC = () => {
   );
 };
 
-export default PrivacyPolicyEditor;
+export default TermsEditor;

@@ -1,9 +1,9 @@
-import DashboadOverview from "@/Pages/DashboardHome/DashboadOverview";
+import LoginForm from "@/auth/login/LoginForm";
 
 const Home = () => {
     return (
         <div>
-            <DashboadOverview />
+           <LoginForm/>
         </div>
     );
 };

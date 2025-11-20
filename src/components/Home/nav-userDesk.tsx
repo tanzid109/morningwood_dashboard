@@ -7,7 +7,6 @@ import {
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -18,14 +17,14 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { HeartIcon, LogOut, LucideLayoutDashboard, Settings } from "lucide-react"
+import { LogOut } from "lucide-react"
 import Link from "next/link"
 
 export function NavUserDesk({
     user,
 }: {
     user: {
-        channel:string
+        channel: string
         name: string
         email: string
         avatar: string
@@ -43,7 +42,7 @@ export function NavUserDesk({
                             size="lg"
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
-                            <Avatar className="h-12 w-12 rounded-full border-2">
+                            <Avatar className="h-14 w-14 rounded-full border-2">
                                 <AvatarImage src={user.avatar} alt={user.name} />
                                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                             </Avatar>
@@ -71,14 +70,11 @@ export function NavUserDesk({
                                     <span className="text-muted-foreground truncate text-xs">
                                         {user.email}
                                     </span>
-                                    <Link href="/channel" className="border border-[#5A392F] text-center p-2 mt-2 rounded-full">
-                                        View Channel
-                                    </Link>
                                 </div>
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
+                        {/* <DropdownMenuGroup>
                             <Link href="/dashboard">
                                 <DropdownMenuItem>
                                     <LucideLayoutDashboard />
@@ -93,11 +89,10 @@ export function NavUserDesk({
                                 <Settings />
                                 Account Settings
                             </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
+                        </DropdownMenuGroup> */}
                         <DropdownMenuItem className="text-red-500">
-                            <LogOut className="text-red-500" />
-                            Log out
+                            <Link href="/login" className="flex items-center gap-2 text-base text-red-500"><LogOut className="text-red-500" />
+                                Log out</Link>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
