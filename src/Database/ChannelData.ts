@@ -1,38 +1,48 @@
 interface ChannelData {
-    sl: string;
+    id:number;
     channelName: string;
     username: string;
     joinedOn: string;
     followers: string;
+    views: string;
+    likes: string;
 }
 
 export const channelData: ChannelData[] = [
     {
-        sl: "01",
+        id:1,
         channelName: "Nova X Play Z",
         username: "@NovaXPlayz",
-        joinedOn: "03 Aug 2025, 11:56 PM",
-        followers: "3.4 M"
+        joinedOn: "03 Aug 2025",
+        followers: "3.4 M",
+        views: "3.4 M",
+        likes: "34.5 K"
     },
     {
-        sl: "02",
+        id:2,
         channelName: "Nova X Play Z",
         username: "@RogueSniper",
-        joinedOn: "03 Aug 2025, 11:56 PM",
-        followers: "3.4 M"
+        joinedOn: "03 Aug 2025",
+        followers: "3.4 M",
+        views: "3.4 M",
+        likes: "34.5 K"
     },
     {
-        sl: "03",
+        id:3,
         channelName: "Nova X Play Z",
         username: "@TuneStreamz",
-        joinedOn: "03 Aug 2025, 11:56 PM",
-        followers: "3.4 M"
+        joinedOn: "03 Aug 2025",
+        followers: "3.4 M",
+        views: "3.4 M",
+        likes: "34.5 K"
     },
     {
-        sl: "04",
+        id:4,
         channelName: "Nova X Play Z",
         username: "@TheChillCorner",
-        joinedOn: "03 Aug 2025, 11:56 PM",
-        followers: "3.4 M"
+        joinedOn: "03 Aug 2025",
+        followers: "3.4 M",
+        views: "3.4 M",
+        likes: "34.5 K"
     }
 ];
