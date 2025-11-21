@@ -50,7 +50,7 @@ export default function ResetPasswordForm() {
     const handleClose = () => router.push("/");
 
     return (
-        <main className="flex justify-center items-center min-h-screen max-w-5xl mx-auto px-4 py-6">
+        <div className="flex justify-center items-center min-h-screen max-w-5xl mx-auto px-4 py-6">
             <div className="flex flex-col-reverse md:flex-row-reverse border rounded-lg overflow-hidden shadow-lg w-full">
 
                 {/* LEFT SECTION */}
@@ -177,6 +177,6 @@ export default function ResetPasswordForm() {
                     />
                 </section>
             </div>
-        </main>
+        </div>
     );
 }

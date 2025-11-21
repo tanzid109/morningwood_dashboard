@@ -5,7 +5,7 @@ import TermsEditor from './Terms';
 
 const SettingsHome = () => {
     return (
-        <main>
+        <div>
             <h2 className='text-[#FDD3C6] font-semibold text-2xl my-5'>Page Settings</h2>
             <Tabs defaultValue="privacy">
                 <TabsList>
@@ -16,7 +16,7 @@ const SettingsHome = () => {
                 <TabsContent value="privacy"><PrivacyPolicyEditor/></TabsContent>
                 <TabsContent value="terms"><TermsEditor/></TabsContent>
             </Tabs>
-        </main>
+        </div>
     );
 };
 

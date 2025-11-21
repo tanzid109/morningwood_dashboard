@@ -22,9 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${sora.variable} antialiased px-4 tracking-wide`}>
-        <div>
+        <main>
           {children}
-        </div>
+        </main>
         <Toaster position="top-center" />
       </body>
     </html>

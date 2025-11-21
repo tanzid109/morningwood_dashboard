@@ -35,16 +35,13 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${sora.variable} antialiased px-4 tracking-wide`}>
+      <body className={`${sora.variable} antialiased tracking-wide`}>
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
             <header className="sticky bg-[#24120C] top-0 z-50 backdrop-blur-xl flex flex-wrap justify-between items-center p-2 gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-auto border-b border-[#5A392F]">
-
-              {/* Left section */}
               <div className="flex items-center justify-center gap-3 px-4">
                 <SidebarTrigger className="-ml-1" />
-                {/* Logo placeholder */}
                 <div className="relative mx-auto w-16 h-16">
                   <Link href="/">
                     <Image
@@ -57,17 +54,18 @@ export default function RootLayout({
                 </div>
               </div>
 
-              {/* Right section */}
               <div className="flex items-center gap-4 md:gap-6 flex-wrap">
                 <div className="hidden md:flex">
                   <NavUserDesk user={data.user} />
                 </div>
               </div>
             </header>
-            <div>
+
+            <main className="px-4 py-4">
               {children}
-            </div>
+            </main>
           </SidebarInset>
+
           <Toaster position="top-center" />
         </SidebarProvider>
       </body>

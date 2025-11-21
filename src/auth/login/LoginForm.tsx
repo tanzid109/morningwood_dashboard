@@ -51,7 +51,7 @@ export default function LoginForm() {
     }
 
     return (
-        <main className="flex justify-center items-center min-h-screen max-w-5xl mx-auto p-2">
+        <div className="flex justify-center items-center min-h-screen max-w-5xl mx-auto p-2">
             <div className="flex flex-col-reverse md:flex-row-reverse border rounded-lg overflow-hidden shadow-lg">
                 {/* Left Section - Form */}
                 <section className="relative flex flex-col justify-center items-center w-full md:w-1/2 bg-[#24120C] text-[#FDD3C6] p-10">
@@ -149,19 +149,6 @@ export default function LoginForm() {
                             </Button>
                         </form>
                     </Form>
-
-                    {/* Footer */}
-
-                    <p className="mt-4 text-sm tracking-wide text-[#A47E72] text-center">
-                        By signing in, you agree to our{" "}
-                        <Link href="/terms" className="text-[#FDD3C6] font-semibold underline">
-                            Terms & Conditions
-                        </Link>{" "}
-                        and{" "}
-                        <Link href="/privacy" className="text-[#FDD3C6] font-semibold underline">
-                            Privacy Policy
-                        </Link>.
-                    </p>
                 </section>
 
                 {/* Right Section - Logo / Image */}
@@ -175,6 +162,6 @@ export default function LoginForm() {
                     />
                 </section>
             </div>
-        </main>
+        </div>
     );
 }

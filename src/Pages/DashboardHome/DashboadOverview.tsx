@@ -5,12 +5,12 @@ import DashboardTable from './DashboardTable';
 
 const DashboadOverview = () => {
     return (
-        <main>
+        <div>
             <h2 className='my-5 text-2xl text-[#FDD3C6] font-bold'>Dashboard Overview</h2>
             <UsageOverview/>
             <GrowthOverview/>
             <DashboardTable/>
-        </main>
+        </div>
     );
 };
 

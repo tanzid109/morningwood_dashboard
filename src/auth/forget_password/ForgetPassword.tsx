@@ -58,7 +58,7 @@ export default function ForgetPasswordForm() {
     }
 
     return (
-        <main className="flex justify-center items-center min-h-screen max-w-5xl mx-auto ">
+        <div className="flex justify-center items-center min-h-screen max-w-5xl mx-auto ">
             <div className="md:h-[60vh] flex flex-col-reverse md:flex-row-reverse border rounded-lg overflow-hidden shadow-lg">
 
                 {/* Left Section - Form */}
@@ -121,6 +121,6 @@ export default function ForgetPasswordForm() {
                     />
                 </div>
             </div>
-        </main>
+        </div>
     );
 }

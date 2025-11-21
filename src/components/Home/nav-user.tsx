@@ -7,7 +7,6 @@ import {
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -19,7 +18,7 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from "@/components/ui/sidebar"
-import { HeartIcon, LogOut, LucideLayoutDashboard, Settings } from "lucide-react"
+import { LogOut, } from "lucide-react"
 import Link from "next/link"
 
 export function NavUser({
@@ -32,7 +31,7 @@ export function NavUser({
         avatar: string
     }
 }) {
-    const { isMobile } = useSidebar()
+    // const { isMobile } = useSidebar()
 
 
     return (
@@ -78,23 +77,6 @@ export function NavUser({
                                 </div>
                             </div>
                         </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
-                            <Link href="/dashboard">
-                                <DropdownMenuItem>
-                                    <LucideLayoutDashboard />
-                                    Creator Dashboard
-                                </DropdownMenuItem>
-                            </Link>
-                            <DropdownMenuItem>
-                                <HeartIcon />
-                                Loved Streaming
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <Settings />
-                                Account Settings
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-red-500">
                             <LogOut className="text-red-500" />

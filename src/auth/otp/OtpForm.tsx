@@ -42,7 +42,7 @@ export default function OtpForm() {
     const handleBack = () => router.back();
 
     return (
-        <main className="flex justify-center items-center min-h-screen bg-[#1A0E0B] p-2">
+        <div className="flex justify-center items-center min-h-screen bg-[#1A0E0B] p-2">
             <div className="md:h-[60vh] flex flex-col-reverse md:flex-row-reverse w-full max-w-5xl rounded-xl overflow-hidden border border-[#3B2A23] shadow-xl">
 
                 {/* LEFT SECTION - FORM */}
@@ -151,6 +151,6 @@ export default function OtpForm() {
                     />
                 </section>
             </div>
-        </main>
+        </div>
     );
 }

@@ -31,7 +31,7 @@ const UsageOverview = () => {
     ];
 
     return (
-        <main className="mx-auto border p-4 rounded-2xl my-3">
+        <div className="mx-auto border p-4 rounded-2xl my-3">
             <h1 className="text-xl font-bold text-[#FDD3C6] my-3">Platform Usage Overview</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat, index) => (
@@ -44,7 +44,7 @@ const UsageOverview = () => {
                     </Card>
                 ))}
             </div>
-        </main>
+        </div>
     );
 };
 

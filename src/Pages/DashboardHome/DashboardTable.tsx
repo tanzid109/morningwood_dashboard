@@ -5,7 +5,7 @@ import { DataTable } from "@/Shared/Table/Table";
 import { channelData } from "@/Database/ChannelData";
 
 interface ChannelData {
-    sl: string;
+    id: string;
     channelName: string;
     username: string;
     joinedOn: string;
@@ -15,9 +15,9 @@ interface ChannelData {
 export default function DashboardTable() {
     const columns: ColumnDef<ChannelData>[] = [
         {
-            accessorKey: "sl",
+            accessorKey: "id",
             header: () => <div className="text-center">SL</div>,
-            cell: ({ row }) => <div className="text-center">{row.original.sl}</div>,
+            cell: ({ row }) => <div className="text-center">{row.original.id}</div>,
         },
         {
             accessorKey: "channelName",

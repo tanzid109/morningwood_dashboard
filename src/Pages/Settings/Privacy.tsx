@@ -1,9 +1,9 @@
 "use client"
-import React, { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import JoditEditor from 'jodit-react';
 import { Button } from '@/components/ui/button';
 
-const PrivacyPolicyEditor: React.FC = () => {
+const PrivacyPolicyEditor = () => {
   const editor = useRef(null);
   const [content, setContent] = useState(`
     <h2><strong>Effective Date: 1st September 2025</strong></h2>
@@ -128,99 +128,101 @@ const PrivacyPolicyEditor: React.FC = () => {
   return (
     <div className="text-[#FDD3C6]">
       <style>{`
-        .jodit-container {
-          background: #24120C !important;
-          border: 1px solid #5A392F !important;
-          border-radius: 8px !important;
-          font-family: 'Sora', sans-serif !important;
-        }
-        
-        .jodit-toolbar-editor-collection {
-          background: #24120C !important;
-          border-bottom: 1px solid #3a3330 !important;
-        }
-        
-        .jodit-toolbar__box {
-          background: #2a2320 !important;
-        }
-        
-        .jodit-toolbar-button {
-          background: transparent !important;
-          color: #ffffff !important;
-        }
-        
-        .jodit-toolbar-button:hover {
-          background: #3a3330 !important;
-        }
-        
-        .jodit-toolbar-button_active {
-          background: #3a3330 !important;
-        }
-        
-        .jodit-wysiwyg {
-          background: #24120C !important;
-          color: #ffffff !important;
-          padding: 24px !important;
-          font-size: 16px !important;
-          line-height: 1.6 !important;
-        }
-        
-        .jodit-wysiwyg p {
-          color: #ffffff !important;
-          margin-bottom: 12px !important;
-        }
-        
-        .jodit-wysiwyg ul,
-        .jodit-wysiwyg ol {
-          color: #ffffff !important;
-          margin-left: 20px !important;
-          margin-bottom: 12px !important;
-        }
-        
-        .jodit-wysiwyg li {
-          color: #ffffff !important;
-          margin-bottom: 4px !important;
-        }
-        
-        .jodit-wysiwyg h2 {
-          color: #ffffff !important;
-          font-size: 20px !important;
-          margin-bottom: 16px !important;
-        }
-        
-        .jodit-status-bar {
-          background: #2a2320 !important;
-          border-top: 1px solid #3a3330 !important;
-          color: #ffffff !important;
-        }
-        
-        .jodit-ui-select__value {
-          background: #1a1512 !important;
-          color: #ffffff !important;
-          border-color: #3a3330 !important;
-        }
-        
-        .jodit-ui-select__options {
-          background: #2a2320 !important;
-          border-color: #3a3330 !important;
-        }
-        
-        .jodit-ui-select__option {
-          color: #ffffff !important;
-        }
-        
-        .jodit-ui-select__option:hover {
-          background: #3a3330 !important;
-        }
-        
-        .jodit-toolbar-button__icon svg {
-          fill: #ffffff !important;
-        }
-        
-        .jodit-placeholder {
-          color: #666 !important;
-        }
-      `}</style>
+  .jodit-container {
+    background: #24120C !important;
+    color: #FDD3C6 !important;
+    border: 1px solid #5A392F !important;
+    border-radius: 8px !important;
+    font-family: 'Sora', sans-serif !important;
+  }
+  
+  .jodit-toolbar-editor-collection {
+    background: #24120C !important;
+    border-bottom: 1px solid #3a3330 !important;
+  }
+  
+  .jodit-toolbar__box {
+    background: #2a2320 !important;
+  }
+  
+  .jodit-toolbar-button {
+    background: transparent !important;
+    color: #FDD3C6 !important;
+  }
+  
+  .jodit-toolbar-button:hover {
+    background: #3a3330 !important;
+  }
+  
+  .jodit-toolbar-button_active {
+    background: #3a3330 !important;
+  }
+  
+  .jodit-toolbar-button__icon svg {
+    fill: #FDD3C6 !important;
+  }
+  
+  .jodit-wysiwyg {
+    background: #24120C !important;
+    color: #FDD3C6 !important;
+    padding: 24px !important;
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+  }
+  
+  .jodit-wysiwyg p {
+    color: #FDD3C6 !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .jodit-wysiwyg ul,
+  .jodit-wysiwyg ol {
+    color: #FDD3C6 !important;
+    margin-left: 20px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .jodit-wysiwyg li {
+    color: #FDD3C6 !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .jodit-wysiwyg h2 {
+    color: #FDD3C6 !important;
+    font-size: 20px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .jodit-status-bar {
+    background: #2a2320 !important;
+    border-top: 1px solid #3a3330 !important;
+    color: #FDD3C6 !important;
+  }
+  
+  .jodit-ui-select__value {
+    background: #1a1512 !important;
+    color: #FDD3C6 !important;
+    border-color: #3a3330 !important;
+  }
+  
+  .jodit-ui-select__options {
+    background: #2a2320 !important;
+    border-color: #3a3330 !important;
+  }
+  
+  .jodit-ui-select__option {
+    color: #FDD3C6 !important;
+  }
+  
+  .jodit-ui-select__option:hover {
+    background: #3a3330 !important;
+  }
+  
+  .jodit-placeholder {
+    color: #FDD3C6 !important;
+  }
+`}</style>
+
 
       <div className="text-[#FDD3C6] mx-auto">
         {/* Header */}
