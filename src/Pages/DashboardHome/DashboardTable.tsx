@@ -5,7 +5,7 @@ import { DataTable } from "@/Shared/Table/Table";
 import { channelData } from "@/Database/ChannelData";
 
 interface ChannelData {
-    id: string;
+    id: number;
     channelName: string;
     username: string;
     joinedOn: string;
