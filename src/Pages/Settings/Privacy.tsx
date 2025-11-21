@@ -29,7 +29,8 @@ const PrivacyPolicyEditor = () => {
   `);
 
   const config = useMemo(
-    () => ({
+    () =>
+    ({
       readonly: false,
       placeholder: 'Start typing...',
       height: 500,
@@ -56,55 +57,32 @@ const PrivacyPolicyEditor = () => {
         'undo',
         'redo',
       ],
-      buttonsMD: [
-        'font',
-        'fontsize',
-        '|',
-        'bold',
-        'italic',
-        'underline',
-        '|',
-        'ul',
-        'ol',
-        '|',
-        'align',
-      ],
-      buttonsSM: [
-        'bold',
-        'italic',
-        '|',
-        'ul',
-        'ol',
-        '|',
-        'align',
-      ],
-      buttonsXS: [
-        'bold',
-        'italic',
-        '|',
-        'ul',
-        'ol',
-      ],
       controls: {
         font: {
           list: {
-            'Sora': 'Sora',
-            'Inter': 'Inter',
-            'Arial': 'Arial',
-            'Georgia': 'Georgia',
+            Sora: 'Sora',
+            Inter: 'Inter',
+            Arial: 'Arial',
+            Georgia: 'Georgia',
             'Times New Roman': 'Times New Roman',
-          }
+          },
         },
         fontsize: {
-          list: '12,14,16,18,20,24,28,32'
-        }
+          list: '12,14,16,18,20,24,28,32',
+        },
       },
+
       askBeforePasteHTML: false,
       askBeforePasteFromWord: false,
-      defaultActionOnPaste: 'insert_clear_html',
-    }),
+
+      // ✅ Stop error
+      defaultActionOnPaste: 'clear',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any),
     []
   );
+
+
 
   const formatDate = (date: Date): string => {
     const options: Intl.DateTimeFormatOptions = {
