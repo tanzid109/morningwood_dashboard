@@ -1,10 +1,10 @@
-import ContentTable from '@/Pages/Content/Content';
+import ContentTable from '@/pages/Content/Content';
 import React from 'react';
 
 const Content = () => {
     return (
         <div>
-            <ContentTable/>
+            <ContentTable />
         </div>
     );
 };

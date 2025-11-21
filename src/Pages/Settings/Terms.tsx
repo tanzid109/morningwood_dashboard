@@ -1,7 +1,10 @@
 "use client"
 import { useState, useRef, useMemo } from 'react';
-import JoditEditor from 'jodit-react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
+
+// Dynamic import with ssr: false to prevent server-side rendering issues
+const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false });
 
 const TermsEditor = () => {
   const editor = useRef(null);
@@ -81,6 +84,8 @@ const TermsEditor = () => {
     } as any),
     []
   );
+
+
 
   const formatDate = (date: Date): string => {
     const options: Intl.DateTimeFormatOptions = {

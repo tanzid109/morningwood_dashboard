@@ -1,10 +1,10 @@
-import DashboadOverview from '@/Pages/DashboardHome/DashboadOverview';
+import DashboadOverview from '@/pages/DashboardHome/DashboadOverview';
 import React from 'react';
 
 const Dashboard = () => {
     return (
         <div>
-            <DashboadOverview/>
+            <DashboadOverview />
         </div>
     );
 };

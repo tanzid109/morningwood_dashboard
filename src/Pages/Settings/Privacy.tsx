@@ -1,7 +1,10 @@
 "use client"
 import { useState, useRef, useMemo } from 'react';
-import JoditEditor from 'jodit-react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
+
+// Dynamic import with ssr: false to prevent server-side rendering issues
+const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false });
 
 const PrivacyPolicyEditor = () => {
   const editor = useRef(null);
@@ -77,7 +80,7 @@ const PrivacyPolicyEditor = () => {
 
       // ✅ Stop error
       defaultActionOnPaste: 'clear',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any),
     []
   );

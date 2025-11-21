@@ -1,10 +1,9 @@
-import CategoryTable from '@/Pages/Category/CategoryTable';
-import React from 'react';
+import CategoryTable from "@/pages/Category/CategoryTable";
 
 const Category = () => {
     return (
         <div>
-            <CategoryTable/>
+            <CategoryTable />
         </div>
     );
 };

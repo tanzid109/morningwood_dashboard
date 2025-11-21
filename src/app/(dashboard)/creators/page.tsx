@@ -1,10 +1,10 @@
-import CreatorTable from '@/Pages/Creator/CreatorTable';
+import CreatorTable from '@/pages/Creator/CreatorTable';
 import React from 'react';
 
 const Creators = () => {
     return (
         <div>
-            <CreatorTable/>
+            <CreatorTable />
         </div>
     );
 };
