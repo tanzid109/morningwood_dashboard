@@ -6,11 +6,16 @@ import {
     SidebarFooter,
 } from "@/components/ui/sidebar"
 import { NavMain } from "./nav-main"
-import { usePathname } from "next/navigation"
-import {  LayoutDashboardIcon, Settings, UserCircle2Icon } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import {  LayoutDashboardIcon, LogOut, Settings, UserCircle2Icon } from "lucide-react"
 import { NavUser } from "./nav-user"
 import { MdOutlineCategory } from "react-icons/md";
 import { BsFillCollectionPlayFill } from "react-icons/bs";
+import { Button } from "../ui/button"
+import { Spinner } from "../ui/spinner"
+import { useState } from "react"
+import { toast } from "sonner"
+import { logoutUser } from "@/Server/Auth/Index"
 
 const data = {
     user: {
@@ -50,21 +55,59 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const pathname = usePathname()
-
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const router = useRouter();
     // Add `isActive` based on current path for main nav
     const navItems = data.navMain.map((item) => ({
         ...item,
         isActive: pathname === item.url,
     }))
+    const handleLogout = async () => {
+        try {
+            setIsLoggingOut(true);
+            const result = await logoutUser();
 
+            if (result.success) {
+                toast.success("Logged out successfully");
+                router.push("/login");
+                router.refresh();
+            } else {
+                toast.error("Failed to logout. Please try again.");
+            }
+        } catch (error) {
+            console.error("Logout error:", error);
+            toast.error("An error occurred during logout");
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
 
     return (
         <Sidebar variant="inset" className="bg-[#24120C]" collapsible="icon"{...props}>
             <SidebarContent>
                 <NavMain items={navItems} />
             </SidebarContent>
-            <SidebarFooter className="md:hidden flex">
+            <SidebarContent className="md:hidden flex">
                 <NavUser user={data.user} />
+            </SidebarContent>
+            <SidebarFooter>
+                <Button
+                    variant="destructive"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="flex items-center gap-2"
+                >
+                    {isLoggingOut ? (
+                        <>
+                            <Spinner className="text-sm" />
+                            Signing out...
+                        </>
+                    ) : (
+                        <>
+                            Sign out <LogOut className="size-5" />
+                        </>
+                    )}
+                </Button>
             </SidebarFooter>
         </Sidebar>
     )

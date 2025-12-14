@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,9 +19,14 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Eye, EyeOff, X } from "lucide-react";
 import { resetSchema } from "./ResetValidation";
+import { resetUserPassword } from "@/Server/Auth/Index";
+import { toast } from "sonner";
 
 export default function ResetPasswordForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const token = searchParams?.get('token');
+
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -38,19 +43,36 @@ export default function ResetPasswordForm() {
     const passwordConfirm = watch("Cpassword");
 
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
+        if (!token) {
+            toast.error("Invalid reset token. Please try again.");
+            return;
+        }
+
         try {
-            console.log("Reset Password Data:", data);
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            router.push("/login");
+            const res = await resetUserPassword({
+                token: token, // Pass token to match your API structure
+                newPassword: data.password,
+                confirmPassword: data.Cpassword,
+            });
+
+            console.log(res);
+
+            if (res.success) {
+                toast.success(res.message);
+                router.push("/login");
+            } else {
+                toast.error(res.message || "Failed to reset password.");
+            }
         } catch (error) {
-            console.error("Reset password error:", error);
+            console.error(error);
+            toast.error("Failed to reset password. Please try again.");
         }
     };
 
     const handleClose = () => router.push("/");
 
     return (
-        <div className="flex justify-center items-center min-h-screen max-w-5xl mx-auto px-4 py-6">
+        <main className="flex justify-center items-center min-h-screen max-w-5xl mx-auto px-4 py-6">
             <div className="flex flex-col-reverse md:flex-row-reverse border rounded-lg overflow-hidden shadow-lg w-full">
 
                 {/* LEFT SECTION */}
@@ -138,7 +160,7 @@ export default function ResetPasswordForm() {
                                 )}
                             />
 
-                            {password !== passwordConfirm && (
+                            {password !== passwordConfirm && passwordConfirm && (
                                 <p className="text-sm text-red-400 text-left">
                                     Passwords do not match
                                 </p>
@@ -148,7 +170,7 @@ export default function ResetPasswordForm() {
                             <Button
                                 type="submit"
                                 disabled={
-                                    isSubmitting || password !== passwordConfirm
+                                    isSubmitting || password !== passwordConfirm || !token
                                 }
                                 className="w-full flex justify-center items-center gap-2 bg-[#FDD3C6] text-[#24120C] hover:bg-[#E8B6A9]"
                             >
@@ -177,6 +199,6 @@ export default function ResetPasswordForm() {
                     />
                 </section>
             </div>
-        </div>
+        </main>
     );
 }

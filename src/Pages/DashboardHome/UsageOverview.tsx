@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { getDashboardStats } from '@/Server/Dashboard/Index';
 
 interface StatCardProps {
     value: string;
@@ -6,25 +7,37 @@ interface StatCardProps {
     description: string;
 }
 
-const UsageOverview = () => {
-    const stats : StatCardProps[] = [
+const UsageOverview = async () => {
+    const allStats = await getDashboardStats()
+    console.log(allStats.data);
+
+    const statsData = allStats?.data || {
+        totalUsers: 0,
+        totalCreators: 0,
+        liveStreams: 0,
+        scheduledStreams: 0,
+        totalStreams: 0,
+        reportedStreams: 0
+    };
+
+    const stats: StatCardProps[] = [
         {
-            value: '765',
+            value: statsData.totalUsers.toString(),
             title: 'New Sign Up',
             description: 'Users who joined in the last 24 hours'
         },
         {
-            value: '1.2 K',
+            value: statsData.liveStreams.toString(),
             title: 'Active Live Streams',
             description: 'Active creators streaming at this moment'
         },
         {
-            value: '35 M',
+            value: statsData.totalStreams.toString(),
             title: 'Currently Watching',
             description: 'Total viewers watching right now'
         },
         {
-            value: '0',
+            value: statsData.reportedStreams.toString(),
             title: 'Reported Streams',
             description: 'Streams flagged by users for review'
         }

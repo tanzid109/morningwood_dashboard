@@ -35,7 +35,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${sora.variable} antialiased tracking-wide`}>
+      <body className={`${sora.variable} antialiased`}>
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>

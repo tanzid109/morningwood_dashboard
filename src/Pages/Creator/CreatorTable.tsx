@@ -7,27 +7,39 @@ import {
     getFilteredRowModel,
     ColumnFiltersState,
 } from "@tanstack/react-table";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { DataTable } from "@/Shared/Table/Table";
-import { channelData } from "@/Database/ChannelData";
+import { getAllUsers } from "@/Server/Creators";
 
-interface ChannelData {
-    id: number;
-    channelName: string;
-    username: string;
-    joinedOn: string;
-    followers: string;
-    views: string;
-    likes: string;
+interface User {
+    _id: string;
+    role: string;
+    email: string;
+    image: string;
+    status: string;
+    verified: boolean;
+    creatorStats: {
+        totalFollowers: number;
+        totalStreams: number;
+        totalStreamViews: number;
+        totalLikes: number;
+    };
+    channelName?: string;
+    username?: string;
 }
 
-export default function CreatorTable() {
-    const [channels, setChannels] = useState<ChannelData[]>(channelData);
+interface TableUser extends User {
+    joinedOn: string;
+}
+
+const CreatorTable = () => {
+    const [users, setUsers] = useState<TableUser[]>([]);
+    const [loading, setLoading] = useState(true);
     const [pageSize, setPageSize] = useState(5);
     const [pageIndex, setPageIndex] = useState(0);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -35,8 +47,51 @@ export default function CreatorTable() {
     const [sortOption, setSortOption] = useState<string>("newold");
     const [rowSelection, setRowSelection] = useState({});
     const [actionValue, setActionValue] = useState<string>("");
+    const [totalUsers, setTotalUsers] = useState(0);
 
-    const columns: ColumnDef<ChannelData>[] = [
+    // Fetch users from API with pagination
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                setLoading(true);
+
+                // Call API with pagination parameters
+                const response = await getAllUsers({
+                    page: pageIndex + 1, // API pages start from 1
+                    limit: pageSize
+                });
+
+                if (response.success && response.data?.users) {
+                    // Transform the API data to include joinedOn date
+                    const transformedUsers = response.data.users.map((user: User) => ({
+                        ...user,
+                        joinedOn: new Date(parseInt(user._id.substring(0, 8), 16) * 1000).toISOString().split('T')[0]
+                    }));
+                    setUsers(transformedUsers);
+                    setTotalUsers(response.data.total || transformedUsers.length);
+                } else {
+                    toast.error(response.message || "Failed to fetch users");
+                }
+            } catch (error) {
+                console.error("Error fetching users:", error);
+                toast.error("An error occurred while fetching users");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, [pageIndex, pageSize]);
+
+    // Helper function to format numbers
+    const formatNumber = (num: number): string => {
+        if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)} B`;
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)} M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(1)} K`;
+        return num.toString();
+    };
+
+    const columns: ColumnDef<TableUser>[] = [
         {
             id: "select",
             header: ({ table }) => (
@@ -64,8 +119,16 @@ export default function CreatorTable() {
             header: () => <div className="text-left">Channel Name</div>,
             cell: ({ row }) => (
                 <div className="flex justify-stretch items-center gap-2">
-                    <span className="h-14 w-24 rounded-2xl bg-[#4C2C22]"></span>
-                    <span>{row.original.channelName}</span>
+                    {row.original.image ? (
+                        <img
+                            src={row.original.image}
+                            alt={row.original.channelName || "Channel"}
+                            className="h-14 w-24 rounded-2xl object-cover"
+                        />
+                    ) : (
+                        <span className="h-14 w-24 rounded-2xl bg-[#4C2C22]"></span>
+                    )}
+                    <span>{row.original.channelName || "N/A"}</span>
                 </div>
             ),
         },
@@ -74,7 +137,7 @@ export default function CreatorTable() {
             header: () => <div className="text-center">User Name</div>,
             cell: ({ row }) => (
                 <div className="text-center">
-                    <span>{row.original.username}</span>
+                    <span>{row.original.username || "N/A"}</span>
                 </div>
             ),
         },
@@ -88,72 +151,47 @@ export default function CreatorTable() {
             ),
         },
         {
-            accessorKey: "followers",
+            accessorKey: "creatorStats.totalFollowers",
             header: () => <div className="text-center">Followers</div>,
             cell: ({ row }) => (
                 <div className="text-center">
-                    <span>{row.original.followers}</span>
+                    <span>{formatNumber(row.original.creatorStats.totalFollowers)}</span>
                 </div>
             ),
         },
         {
-            accessorKey: "views",
+            accessorKey: "creatorStats.totalStreamViews",
             header: () => <div className="text-center">Views</div>,
             cell: ({ row }) => (
                 <div className="text-center">
-                    <span>{row.original.views}</span>
+                    <span>{formatNumber(row.original.creatorStats.totalStreamViews)}</span>
                 </div>
             ),
         },
         {
-            accessorKey: "likes",
+            accessorKey: "creatorStats.totalLikes",
             header: () => <div className="text-center">Likes</div>,
             cell: ({ row }) => (
                 <div className="text-center">
-                    <span>{row.original.likes}</span>
+                    <span>{formatNumber(row.original.creatorStats.totalLikes)}</span>
                 </div>
             ),
         },
     ];
 
-    // Helper function to parse numeric values from strings like "3.4 M" or "34.5 K"
-    const parseNumber = (value: string): number => {
-        const cleanValue = value.trim().toUpperCase();
-        const numMatch = cleanValue.match(/^([\d.]+)\s*([MKB]?)$/);
-
-        if (!numMatch) return 0;
-
-        const num = parseFloat(numMatch[1]);
-        const suffix = numMatch[2];
-
-        switch (suffix) {
-            case 'B': return num * 1000000000;
-            case 'M': return num * 1000000;
-            case 'K': return num * 1000;
-            default: return num;
-        }
-    };
-
-    // Helper function to parse date
-    const parseDate = (dateStr: string): number => {
-        return new Date(dateStr).getTime();
-    };
-
-    // Filtering and Sorting logic
+    // Filtering and Sorting logic (client-side for current page)
     const filteredData = useMemo(() => {
-        let filtered = channels;
+        let filtered = users;
 
         // Apply search filter
         if (globalFilter) {
             const searchValue = globalFilter.toLowerCase();
-            filtered = filtered.filter((channel) =>
+            filtered = filtered.filter((user) =>
                 [
-                    channel.channelName,
-                    channel.username,
-                    channel.joinedOn,
-                    channel.followers,
-                    channel.views,
-                    channel.likes
+                    user.channelName,
+                    user.username,
+                    user.email,
+                    user.joinedOn,
                 ].some((field) => field?.toString().toLowerCase().includes(searchValue))
             );
         }
@@ -162,40 +200,41 @@ export default function CreatorTable() {
         const sorted = [...filtered];
         switch (sortOption) {
             case "newold":
-                sorted.sort((a, b) => parseDate(b.joinedOn) - parseDate(a.joinedOn));
+                sorted.sort((a, b) => new Date(b.joinedOn).getTime() - new Date(a.joinedOn).getTime());
                 break;
             case "oldnew":
-                sorted.sort((a, b) => parseDate(a.joinedOn) - parseDate(b.joinedOn));
+                sorted.sort((a, b) => new Date(a.joinedOn).getTime() - new Date(b.joinedOn).getTime());
                 break;
             case "FHL":
-                sorted.sort((a, b) => parseNumber(b.followers) - parseNumber(a.followers));
+                sorted.sort((a, b) => b.creatorStats.totalFollowers - a.creatorStats.totalFollowers);
                 break;
             case "FLH":
-                sorted.sort((a, b) => parseNumber(a.followers) - parseNumber(b.followers));
+                sorted.sort((a, b) => a.creatorStats.totalFollowers - b.creatorStats.totalFollowers);
                 break;
             case "VHL":
-                sorted.sort((a, b) => parseNumber(b.views) - parseNumber(a.views));
+                sorted.sort((a, b) => b.creatorStats.totalStreamViews - a.creatorStats.totalStreamViews);
                 break;
             case "VLH":
-                sorted.sort((a, b) => parseNumber(a.views) - parseNumber(b.views));
+                sorted.sort((a, b) => a.creatorStats.totalStreamViews - b.creatorStats.totalStreamViews);
                 break;
             case "LHL":
-                sorted.sort((a, b) => parseNumber(b.likes) - parseNumber(a.likes));
+                sorted.sort((a, b) => b.creatorStats.totalLikes - a.creatorStats.totalLikes);
                 break;
             case "LLH":
-                sorted.sort((a, b) => parseNumber(a.likes) - parseNumber(b.likes));
+                sorted.sort((a, b) => a.creatorStats.totalLikes - b.creatorStats.totalLikes);
                 break;
             default:
                 break;
         }
 
         return sorted;
-    }, [channels, globalFilter, sortOption]);
+    }, [users, globalFilter, sortOption]);
 
     const table = useReactTable({
         data: filteredData,
         columns,
-        pageCount: Math.ceil(filteredData.length / pageSize),
+        pageCount: Math.ceil(totalUsers / pageSize), // Use total from API
+        manualPagination: true, // Tell the table we're handling pagination
         state: {
             pagination: { pageIndex, pageSize },
             columnFilters,
@@ -224,27 +263,37 @@ export default function CreatorTable() {
         const selectedRows = table.getSelectedRowModel().rows;
 
         if (selectedRows.length === 0) {
-            toast.error("Please select at least one channel");
+            toast.error("Please select at least one user");
             setActionValue("");
             return;
         }
 
-        const selectedChannels = selectedRows.map(row => row.original);
+        const selectedUsers = selectedRows.map(row => row.original);
 
         switch (action) {
             case "delete":
-                if (confirm(`Are you sure you want to delete ${selectedRows.length} channel(s)?`)) {
-                    const updatedChannels = channels.filter(channel =>
-                        !selectedChannels.some(selected => selected.id === channel.id)
+                if (confirm(`Are you sure you want to delete ${selectedRows.length} user(s)?`)) {
+                    const updatedUsers = users.filter(user =>
+                        !selectedUsers.some(selected => selected._id === user._id)
                     );
-                    setChannels(updatedChannels);
+                    setUsers(updatedUsers);
                     setRowSelection({});
-                    toast.success(`${selectedRows.length} channel(s) deleted successfully`);
+                    toast.success(`${selectedRows.length} user(s) deleted successfully`);
                 }
                 break;
 
             case "export":
-                toast.success(`Exporting ${selectedRows.length} channel(s)`);
+                const exportData = selectedUsers.map(user => ({
+                    channelName: user.channelName,
+                    username: user.username,
+                    email: user.email,
+                    followers: user.creatorStats.totalFollowers,
+                    views: user.creatorStats.totalStreamViews,
+                    likes: user.creatorStats.totalLikes,
+                    joinedOn: user.joinedOn
+                }));
+                console.log("Exporting:", exportData);
+                toast.success(`Exporting ${selectedRows.length} user(s)`);
                 setRowSelection({});
                 break;
         }
@@ -252,6 +301,14 @@ export default function CreatorTable() {
     };
 
     const selectedCount = table.getSelectedRowModel().rows.length;
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="text-[#FDD3C6] text-xl">Loading creators...</div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -264,7 +321,7 @@ export default function CreatorTable() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#FDD3C6] w-4 h-4" />
                     <input
                         type="text"
-                        placeholder="Search channels..."
+                        placeholder="Search creators..."
                         value={globalFilter}
                         onChange={(e) => {
                             setGlobalFilter(e.target.value);
@@ -326,7 +383,7 @@ export default function CreatorTable() {
 
             {/* Results */}
             <div className="mt-2 text-sm text-center text-[#FDD3C6]">
-                Showing {table.getRowModel().rows.length} of {filteredData.length} results
+                Showing {((pageIndex) * pageSize) + 1} to {Math.min((pageIndex + 1) * pageSize, totalUsers)} of {totalUsers} results
                 {selectedCount > 0 && <span className="ml-2 font-semibold">({selectedCount} selected)</span>}
             </div>
 
@@ -416,7 +473,7 @@ export default function CreatorTable() {
                         onChange={(e) => table.setPageSize(Number(e.target.value))}
                         className="border p-1 rounded-lg bg-[#36190F] text-white font-medium text-sm md:text-base"
                     >
-                        {[5, 6, 10, 20].map((size) => (
+                        {[5, 10, 20].map((size) => (
                             <option className="bg-[#36190F]" key={size} value={size}>
                                 {size}
                             </option>
@@ -427,3 +484,5 @@ export default function CreatorTable() {
         </div>
     );
 }
+
+export default CreatorTable;

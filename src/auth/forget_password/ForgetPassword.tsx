@@ -17,6 +17,8 @@ import Image from "next/image";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { forgetSchema } from "./ForgetValidation";
+import { forgotUser } from "@/Server/Auth/Index";
+import { toast } from "sonner";
 
 export default function ForgetPasswordForm() {
     const router = useRouter()
@@ -33,24 +35,18 @@ export default function ForgetPasswordForm() {
 
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
         try {
-            const loginData = {
-                email: data.email,
-                password: data.password,
-            };
-
-            console.log("Login Data:", loginData);
-
-
-            // // simulate API delay
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
-            // // redirect on success
-
+            console.log(data);
+            const res = await forgotUser(data);
+            if (res?.success) {
+                router.push(`/verify`);
+                toast.success(res.message);
+            } else {
+                toast.error(res?.message || "Failed to send verification code");
+            }
+            console.log(res);
         } catch (error) {
             console.error(error);
-        }
-        finally {
-            router.push("/verify");
+            toast.error("An error occurred. Please try again.");
         }
     };
     const handleClose = () => {
@@ -58,7 +54,7 @@ export default function ForgetPasswordForm() {
     }
 
     return (
-        <div className="flex justify-center items-center min-h-screen max-w-5xl mx-auto ">
+        <main className="flex justify-center items-center min-h-screen max-w-5xl mx-auto ">
             <div className="md:h-[60vh] flex flex-col-reverse md:flex-row-reverse border rounded-lg overflow-hidden shadow-lg">
 
                 {/* Left Section - Form */}
@@ -121,6 +117,6 @@ export default function ForgetPasswordForm() {
                     />
                 </div>
             </div>
-        </div>
+        </main>
     );
 }

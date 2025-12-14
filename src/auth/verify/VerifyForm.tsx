@@ -1,6 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Controller, FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,9 +15,15 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { ChevronLeft, X } from "lucide-react";
+import { resendOtp, verifyOtp } from "@/Server/Auth/Index";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export default function VerifyForm() {
+    const [timer, setTimer] = useState(0);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const token = searchParams?.get('token') || null;
 
     const form = useForm({
         resolver: zodResolver(otpSchema),
@@ -29,12 +34,55 @@ export default function VerifyForm() {
 
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
         try {
-            console.log("Entered OTP:", data.otp);
-            // simulate API delay
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            router.push("/reset");
+            const res = await verifyOtp({
+                otp: data.otp,
+                token: token, // Pass the reset token from URL
+            });
+
+            console.log(res);
+
+            if (res.success) {
+                // Pass the same reset token to the reset password page
+                router.push(`/reset?token=${res.data.token}`);
+                toast.success(res.message);
+            } else {
+                toast.error(res.message);
+            }
         } catch (error) {
             console.error("OTP verification failed:", error);
+            toast.error("Verification failed. Please try again.");
+        }
+    };
+
+    const otpResend = async () => {
+        if (timer > 0) return;
+
+        try {
+            const res = await resendOtp({
+                resetToken: token,
+            });
+
+            if (!res.success) {
+                toast.error(res.message);
+                return;
+            }
+
+            toast.success("OTP resent successfully!");
+
+            // Start 60 sec timer
+            setTimer(60);
+            const countdown = setInterval(() => {
+                setTimer((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(countdown);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to resend OTP. Try again.");
         }
     };
 
@@ -42,7 +90,7 @@ export default function VerifyForm() {
     const handleBack = () => router.back();
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-[#1A0E0B] p-2">
+        <main className="flex justify-center items-center min-h-screen bg-[#1A0E0B] p-2">
             <div className="md:h-[60vh] flex flex-col-reverse md:flex-row-reverse w-full max-w-5xl rounded-xl overflow-hidden border border-[#3B2A23] shadow-xl">
 
                 {/* LEFT SECTION - FORM */}
@@ -76,7 +124,7 @@ export default function VerifyForm() {
                         </h2>
 
                         <p className="mb-6 text-sm text-[#FDD3C6]/80 leading-relaxed">
-                            We’ve sent a 6-digit verification code to your email. Please enter it below to confirm your identity.
+                            We&apos;ve sent a 6-digit verification code to your email. Please enter it below to confirm your identity.
                         </p>
 
                         <Form {...form}>
@@ -116,14 +164,22 @@ export default function VerifyForm() {
 
                                 {/* RESEND CODE */}
                                 <div className="text-sm text-center text-[#A47E72]">
-                                    Didn’t receive the code?
-                                    <Link
-                                        href="#"
-                                        className="text-[#FDD3C6] font-semibold ml-1 hover:underline"
+                                    Didn&apos;t receive the code?
+                                    <button
+                                        type="button"
+                                        disabled={timer > 0}
+                                        onClick={otpResend}
+                                        className={`ml-1 font-semibold hover:underline cursor-pointer ${timer > 0 ? "text-gray-400 cursor-not-allowed" : "text-[#FDD3C6]"
+                                            }`}
                                     >
-                                        Resend Code
-                                    </Link>
-                                    <p className="mt-1 text-xs text-[#A47E72]">Resend available in 00:59</p>
+                                        {timer > 0 ? "Wait..." : "Resend Code"}
+                                    </button>
+
+                                    <p className="mt-1 text-xs text-[#A47E72]">
+                                        {timer > 0
+                                            ? `Resend code in 00:${String(timer).padStart(2, "0")}`
+                                            : "You can resend now"}
+                                    </p>
                                 </div>
 
                                 {/* SUBMIT BUTTON */}
@@ -151,6 +207,6 @@ export default function VerifyForm() {
                     />
                 </section>
             </div>
-        </div>
+        </main>
     );
 }

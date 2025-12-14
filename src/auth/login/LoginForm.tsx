@@ -21,7 +21,9 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, X } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import { loginUser } from "@/Server/Auth/Index";
+import { toast } from "sonner";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -39,28 +41,37 @@ export default function LoginForm() {
 
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
         try {
-            console.log("Login Data:", data);
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            router.push("/dashboard");
+            const LoginData = {
+                email: data.email,
+                password: data.password,
+            };
+
+            console.log("Submitting login data:", LoginData);
+
+            const res = await loginUser(LoginData);
+
+            console.log(" Login response received:", res);
+
+            if (res?.success) {
+                toast.success(res.message || "Login successful!");
+                router.push("/dashboard");
+            } else {
+                toast.error(res?.message || "Login failed");
+            }
         } catch (error) {
-            console.error("Login error:", error);
+            console.error("💥 Error during login:", error);
+            toast.error("An error occurred during login");
         }
     };
-    const handleClose=()=>{
-        router.push("/");
-    }
 
     return (
-        <div className="flex justify-center items-center min-h-screen max-w-5xl mx-auto p-2">
+        <main className="flex justify-center items-center min-h-screen max-w-5xl mx-auto p-2">
             <div className="flex flex-col-reverse md:flex-row-reverse border rounded-lg overflow-hidden shadow-lg">
                 {/* Left Section - Form */}
                 <section className="relative flex flex-col justify-center items-center w-full md:w-1/2 bg-[#24120C] text-[#FDD3C6] p-10">
                     {/* <div className="absolute top-3 left-3">
                         <Button><ChevronLeft/></Button>
                     </div> */}
-                    <div className="absolute top-3 right-3">
-                        <Button onClick={()=>handleClose()}><X/></Button>
-                    </div>
                     <h2 className="text-2xl font-semibold my-6">
                         Sign in with your email or username
                     </h2>
@@ -162,6 +173,6 @@ export default function LoginForm() {
                     />
                 </section>
             </div>
-        </div>
+        </main>
     );
 }

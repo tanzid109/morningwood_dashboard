@@ -22,9 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${sora.variable} antialiased`}>
-        <main>
+        <div>
           {children}
-        </main>
+        </div>
       </body>
     </html>
   );

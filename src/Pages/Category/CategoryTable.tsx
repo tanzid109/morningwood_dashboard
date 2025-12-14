@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
     ColumnDef,
     useReactTable,
@@ -20,28 +20,39 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
-import { categoryData } from "@/Database/CategoryData";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable } from "@/Shared/Table/Table";
+import { getAllCategory, createCategory, updateCategory } from "@/Server/Category";
+import { toast } from "sonner";
 
-interface CategoryData {
-    sl: string;
-    categoryName: string;
-    mainPhoto: string;
+interface Category {
+    _id: string;
+    name: string;
+    image: string;
     coverPhoto: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+interface CategoryTableData extends Category {
+    sl: number;
 }
 
 export default function CategoryTable() {
-    const [categories, setCategories] = useState<CategoryData[]>(categoryData);
-    const [pageSize, setPageSize] = useState(6);
+    const [categories, setCategories] = useState<CategoryTableData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [pageSize, setPageSize] = useState(5);
     const [pageIndex, setPageIndex] = useState(0);
     const [globalFilter, setGlobalFilter] = useState("");
     const [rowSelection, setRowSelection] = useState({});
+    const [totalCategories, setTotalCategories] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Dialog states
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
-    const [editingCategory, setEditingCategory] = useState<CategoryData | null>(null);
+    const [editingCategory, setEditingCategory] = useState<CategoryTableData | null>(null);
 
     // Form states
     const [categoryName, setCategoryName] = useState("");
@@ -50,11 +61,43 @@ export default function CategoryTable() {
     const [mainPhotoFile, setMainPhotoFile] = useState<File | null>(null);
     const [coverPhotoFile, setCoverPhotoFile] = useState<File | null>(null);
 
-    // Filtered search
+    // Fetch categories from API with pagination
+    const fetchCategories = async () => {
+        try {
+            setLoading(true);
+
+            const response = await getAllCategory({
+                page: pageIndex + 1,
+                limit: pageSize
+            });
+
+            if (response.success && response.data) {
+                const transformedCategories = response.data.map((category: Category, index: number) => ({
+                    ...category,
+                    sl: (pageIndex * pageSize) + index + 1
+                }));
+                setCategories(transformedCategories);
+                setTotalCategories(response.meta?.total || transformedCategories.length);
+            } else {
+                toast.error(response.message || "Failed to fetch categories");
+            }
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+            toast.error("An error occurred while fetching categories");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCategories();
+    }, [pageIndex, pageSize]);
+
+    // Filtered search (client-side for current page)
     const filteredData = useMemo(() => {
         if (!globalFilter) return categories;
         return categories.filter((item) =>
-            item.categoryName.toLowerCase().includes(globalFilter.toLowerCase())
+            item.name.toLowerCase().includes(globalFilter.toLowerCase())
         );
     }, [categories, globalFilter]);
 
@@ -92,11 +135,11 @@ export default function CategoryTable() {
     };
 
     // Open dialog for editing category
-    const handleEditCategory = (category: CategoryData) => {
+    const handleEditCategory = (category: CategoryTableData) => {
         setIsEditMode(true);
         setEditingCategory(category);
-        setCategoryName(category.categoryName);
-        setMainPhoto(category.mainPhoto);
+        setCategoryName(category.name);
+        setMainPhoto(category.image);
         setCoverPhoto(category.coverPhoto);
         setMainPhotoFile(null);
         setCoverPhotoFile(null);
@@ -104,42 +147,99 @@ export default function CategoryTable() {
     };
 
     // Save category (add or edit)
-    const handleSaveCategory = () => {
-        if (!categoryName || !mainPhoto || !coverPhoto) {
-            alert("Please fill all fields");
+    const handleSaveCategory = async () => {
+        // Validation
+        if (!categoryName.trim()) {
+            toast.error("Category name is required");
             return;
         }
 
-        if (isEditMode && editingCategory) {
-            // Update existing category
-            setCategories((prev) =>
-                prev.map((cat) =>
-                    cat.sl === editingCategory.sl
-                        ? {
-                            ...cat,
-                            categoryName,
-                            mainPhoto,
-                            coverPhoto,
-                        }
-                        : cat
-                )
-            );
-        } else {
-            // Add new category
-            const newCategory: CategoryData = {
-                sl: String(categories.length + 1),
-                categoryName,
-                mainPhoto,
-                coverPhoto,
-            };
-            setCategories((prev) => [...prev, newCategory]);
+        if (!isEditMode) {
+            // For new category, files are required
+            if (!mainPhotoFile) {
+                toast.error("Main photo is required");
+                return;
+            }
+            if (!coverPhotoFile) {
+                toast.error("Cover photo is required");
+                return;
+            }
         }
 
-        setIsDialogOpen(false);
+        try {
+            setIsSubmitting(true);
+
+            if (isEditMode && editingCategory) {
+                // Update existing category
+                const updateData: any = {
+                    id: editingCategory._id,
+                    name: categoryName,
+                };
+
+                // Only include files if they were changed
+                if (mainPhotoFile) {
+                    updateData.image = mainPhotoFile;
+                }
+                if (coverPhotoFile) {
+                    updateData.coverPhoto = coverPhotoFile;
+                }
+
+                const response = await updateCategory(updateData);
+
+                if (response.success) {
+                    toast.success("Category updated successfully");
+                    setIsDialogOpen(false);
+
+                    // Reset form
+                    setCategoryName("");
+                    setMainPhoto("");
+                    setCoverPhoto("");
+                    setMainPhotoFile(null);
+                    setCoverPhotoFile(null);
+                    setEditingCategory(null);
+
+                    // Refresh the categories list
+                    fetchCategories();
+                } else {
+                    toast.error(response.message || "Failed to update category");
+                }
+            } else {
+                // Create new category
+                const categoryData = {
+                    name: categoryName,
+                    image: mainPhotoFile!,
+                    coverPhoto: coverPhotoFile!,
+                };
+
+                const response = await createCategory(categoryData);
+
+                if (response.success) {
+                    toast.success("Category created successfully");
+                    setIsDialogOpen(false);
+
+                    // Reset form
+                    setCategoryName("");
+                    setMainPhoto("");
+                    setCoverPhoto("");
+                    setMainPhotoFile(null);
+                    setCoverPhotoFile(null);
+
+                    // Refresh the categories list
+                    fetchCategories();
+                } else {
+                    toast.error(response.message || "Failed to create category");
+                }
+            }
+        } catch (error) {
+            console.error("Error saving category:", error);
+            toast.error("An error occurred while saving the category");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // Table columns
-    const columns: ColumnDef<CategoryData>[] = [
+    const columns: ColumnDef<CategoryTableData>[] = [
         {
             id: "select",
             header: ({ table }) => (
@@ -170,24 +270,30 @@ export default function CategoryTable() {
             ),
         },
         {
-            accessorKey: "categoryName",
+            accessorKey: "name",
             header: () => <div className="text-center">Category Name</div>,
             cell: ({ row }) => (
-                <div className="text-center">{row.original.categoryName}</div>
+                <div className="text-center">{row.original.name}</div>
             ),
         },
         {
-            accessorKey: "mainPhoto",
+            accessorKey: "image",
             header: () => <div className="text-center">Main Photo</div>,
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <Image
-                        src={row.original.mainPhoto}
-                        height={64}
-                        width={64}
-                        alt="Main"
-                        className="rounded-md object-cover"
-                    />
+                    {row.original.image ? (
+                        <Image
+                            src={row.original.image}
+                            height={64}
+                            width={64}
+                            alt="Main"
+                            className="rounded-md object-cover w-16 h-16"
+                        />
+                    ) : (
+                        <div className="w-16 h-16 bg-[#4C2C22] rounded-md flex items-center justify-center text-xs text-[#FDD3C6]">
+                            No Image
+                        </div>
+                    )}
                 </div>
             ),
         },
@@ -196,13 +302,19 @@ export default function CategoryTable() {
             header: () => <div className="text-center">Cover Photo</div>,
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <Image
-                        src={row.original.coverPhoto}
-                        height={64}
-                        width={224}
-                        alt="Cover"
-                        className="rounded-md object-cover h-16 w-56"
-                    />
+                    {row.original.coverPhoto ? (
+                        <Image
+                            src={row.original.coverPhoto}
+                            height={64}
+                            width={224}
+                            alt="Cover"
+                            className="rounded-md object-cover h-16 w-56"
+                        />
+                    ) : (
+                        <div className="w-56 h-16 bg-[#4C2C22] rounded-md flex items-center justify-center text-xs text-[#FDD3C6]">
+                            No Cover
+                        </div>
+                    )}
                 </div>
             ),
         },
@@ -212,7 +324,7 @@ export default function CategoryTable() {
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <Edit3
-                        className="cursor-pointer transition-colors"
+                        className="cursor-pointer transition-colors hover:text-[#635BFF]"
                         onClick={() => handleEditCategory(row.original)}
                     />
                 </div>
@@ -223,7 +335,8 @@ export default function CategoryTable() {
     const table = useReactTable({
         data: filteredData,
         columns,
-        pageCount: Math.ceil(filteredData.length / pageSize),
+        pageCount: Math.ceil(totalCategories / pageSize),
+        manualPagination: true,
         state: {
             pagination: { pageIndex, pageSize },
             globalFilter,
@@ -244,6 +357,14 @@ export default function CategoryTable() {
         getPaginationRowModel: getPaginationRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
     });
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="text-[#FDD3C6] text-xl">Loading categories...</div>
+            </div>
+        );
+    }
 
     return (
         <main>
@@ -267,7 +388,10 @@ export default function CategoryTable() {
                         type="text"
                         placeholder="Search category..."
                         value={globalFilter}
-                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        onChange={(e) => {
+                            setGlobalFilter(e.target.value);
+                            setPageIndex(0);
+                        }}
                         className="shadow rounded-md border py-2 pl-10 pr-8 text-[#FDD3C6] focus:ring-2 focus:ring-[#635BFF] bg-transparent w-full"
                     />
                 </div>
@@ -277,7 +401,10 @@ export default function CategoryTable() {
                     <p className="text-[#FDD3C6] text-sm md:text-base">Show per page</p>
                     <select
                         value={pageSize}
-                        onChange={(e) => setPageSize(Number(e.target.value))}
+                        onChange={(e) => {
+                            setPageSize(Number(e.target.value));
+                            setPageIndex(0);
+                        }}
                         className="border p-1 rounded-lg bg-[#36190F] text-white text-sm md:text-base"
                     >
                         {[5, 10, 20].map((size) => (
@@ -287,6 +414,11 @@ export default function CategoryTable() {
                         ))}
                     </select>
                 </div>
+            </div>
+
+            {/* Results Info */}
+            <div className="mb-2 text-sm text-center text-[#FDD3C6]">
+                Showing {((pageIndex) * pageSize) + 1} to {Math.min((pageIndex + 1) * pageSize, totalCategories)} of {totalCategories} results
             </div>
 
             {/* Table */}
@@ -345,7 +477,9 @@ export default function CategoryTable() {
 
                         {/* Main Photo */}
                         <div className="space-y-2">
-                            <Label className="text-[#FDD3C6] text-sm sm:text-base">Main Photo</Label>
+                            <Label className="text-[#FDD3C6] text-sm sm:text-base">
+                                Main Photo {isEditMode && <span className="text-xs text-[#B8968A]">(Leave empty to keep current)</span>}
+                            </Label>
                             <div className="border-2 border-dashed border-[#4A3830] rounded-lg p-4 sm:p-6 text-center hover:border-[#635BFF] transition-colors">
                                 <input
                                     type="file"
@@ -359,13 +493,20 @@ export default function CategoryTable() {
                                     className="cursor-pointer flex flex-col items-center gap-2"
                                 >
                                     {mainPhoto ? (
-                                        <Image
-                                            src={mainPhoto}
-                                            alt="Main preview"
-                                            width={148}
-                                            height={220}
-                                            className="rounded-md object-cover max-w-full h-auto"
-                                        />
+                                        <div className="relative">
+                                            <Image
+                                                src={mainPhoto}
+                                                alt="Main preview"
+                                                width={148}
+                                                height={220}
+                                                className="rounded-md object-cover max-w-full h-auto"
+                                            />
+                                            {mainPhotoFile && (
+                                                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                                                    New
+                                                </div>
+                                            )}
+                                        </div>
                                     ) : (
                                         <>
                                             <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-[#FDD3C6]" />
@@ -384,7 +525,9 @@ export default function CategoryTable() {
 
                         {/* Cover Photo */}
                         <div className="space-y-2">
-                            <Label className="text-[#FDD3C6] text-sm sm:text-base">Cover Photo</Label>
+                            <Label className="text-[#FDD3C6] text-sm sm:text-base">
+                                Cover Photo {isEditMode && <span className="text-xs text-[#B8968A]">(Leave empty to keep current)</span>}
+                            </Label>
                             <div className="border-2 border-dashed border-[#4A3830] rounded-lg p-4 sm:p-6 text-center hover:border-[#635BFF] transition-colors">
                                 <input
                                     type="file"
@@ -398,13 +541,20 @@ export default function CategoryTable() {
                                     className="cursor-pointer flex flex-col items-center gap-2"
                                 >
                                     {coverPhoto ? (
-                                        <Image
-                                            src={coverPhoto}
-                                            alt="Cover preview"
-                                            width={1160}
-                                            height={320}
-                                            className="rounded-md object-cover max-w-full h-auto"
-                                        />
+                                        <div className="relative">
+                                            <Image
+                                                src={coverPhoto}
+                                                alt="Cover preview"
+                                                width={1160}
+                                                height={320}
+                                                className="rounded-md object-cover max-w-full h-auto"
+                                            />
+                                            {coverPhotoFile && (
+                                                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                                                    New
+                                                </div>
+                                            )}
+                                        </div>
                                     ) : (
                                         <>
                                             <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-[#FDD3C6]" />
@@ -426,15 +576,17 @@ export default function CategoryTable() {
                         <Button
                             variant="outline"
                             onClick={() => setIsDialogOpen(false)}
+                            disabled={isSubmitting}
                             className="bg-transparent border-[#4A3830] text-[#FDD3C6] hover:bg-[#36190F] w-full sm:w-auto"
                         >
                             Cancel
                         </Button>
                         <Button
                             onClick={handleSaveCategory}
+                            disabled={isSubmitting}
                             className="bg-[#FDD3C6] text-[#2A1810] hover:bg-[#FCC1AD] w-full sm:w-auto"
                         >
-                            {isEditMode ? "Update" : "Create"}
+                            {isSubmitting ? "Saving..." : (isEditMode ? "Update" : "Create")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

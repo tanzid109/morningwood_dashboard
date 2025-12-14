@@ -21,10 +21,10 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${sora.variable} antialiased px-4 tracking-wide`}>
-        <main>
+      <body className={`${sora.variable} antialiased`}>
+        <div>
           {children}
-        </main>
+        </div>
         <Toaster position="top-center" />
       </body>
     </html>
