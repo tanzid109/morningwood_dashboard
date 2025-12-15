@@ -1,9 +1,10 @@
 "use client"
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
+import { createTerms, getTerms } from '@/Server/Settings'; // Add getTerms import
+import { toast } from 'sonner';
 
-// Dynamic import with ssr: false to prevent server-side rendering issues
 const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false });
 
 const TermsEditor = () => {
@@ -30,6 +31,9 @@ const TermsEditor = () => {
     <p><strong>7. Changes to Terms</strong><br>
     We may update these terms at any time. Continued use of the platform means you accept the updated terms.</p>
   `);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const config = useMemo(
     () =>
@@ -74,18 +78,12 @@ const TermsEditor = () => {
           list: '12,14,16,18,20,24,28,32',
         },
       },
-
       askBeforePasteHTML: false,
       askBeforePasteFromWord: false,
-
-      // ✅ Stop error
       defaultActionOnPaste: 'clear',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any),
     []
   );
-
-
 
   const formatDate = (date: Date): string => {
     const options: Intl.DateTimeFormatOptions = {
@@ -99,12 +97,59 @@ const TermsEditor = () => {
     return date.toLocaleString('en-GB', options).replace(',', ' at');
   };
 
-  const handleSave = () => {
-    console.log('Saving privacy policy:', content);
-    alert('Privacy Policy saved successfully!');
+  // Fetch existing terms on component mount
+  useEffect(() => {
+    const fetchTerms = async () => {
+      try {
+        const res = await getTerms();
+        if (res.success && res.data) {
+          setContent(res.data.termsAndConditions || '');
+          setLastUpdated(formatDate(new Date(res.data.updatedAt || res.data.createdAt)));
+        } else {
+          setLastUpdated(formatDate(new Date()));
+        }
+      } catch (error) {
+        console.error('Error fetching terms:', error);
+        setLastUpdated(formatDate(new Date()));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTerms();
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const res = await createTerms({ content });
+      if (res.success) {
+        toast.success(res.message || 'Terms & Conditions saved successfully');
+        // Update the last updated timestamp
+        setLastUpdated(formatDate(new Date()));
+
+        // Optionally refetch to ensure sync with server
+        if (res.data) {
+          setContent(res.data.content);
+        }
+      } else {
+        toast.error(res.message || 'Failed to save Terms & Conditions');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('An error occurred while saving');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const lastUpdated = formatDate(new Date('2025-08-25T15:25:00'));
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96 text-[#FDD3C6]">
+        <p>Loading editor...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="text-[#FDD3C6]">
@@ -204,11 +249,12 @@ const TermsEditor = () => {
   }
 `}</style>
 
-
       <div className="text-[#FDD3C6] mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <p className="text-base text-[#FDD3C6]">Last Updated on {lastUpdated}</p>
+          <p className="text-base text-[#FDD3C6]">
+            Last Updated on {lastUpdated || formatDate(new Date())}
+          </p>
         </div>
 
         {/* Jodit Editor */}
@@ -226,9 +272,10 @@ const TermsEditor = () => {
         <div className="flex justify-center mt-6">
           <Button
             onClick={handleSave}
+            disabled={isSaving}
             className="bg-[#8b4513] hover:bg-[#a0522d] text-white px-12 py-2 rounded-md"
           >
-            Save
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </div>
       </div>

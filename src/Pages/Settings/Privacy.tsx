@@ -1,9 +1,10 @@
 "use client"
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
+import { createPrivacy, getPrivacy } from '@/Server/Settings';
+import { toast } from 'sonner';
 
-// Dynamic import with ssr: false to prevent server-side rendering issues
 const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false });
 
 const PrivacyPolicyEditor = () => {
@@ -30,6 +31,9 @@ const PrivacyPolicyEditor = () => {
     <p><strong>4 Your Choices</strong><br>
     You can edit or delete your profile, adjust notification preferences, and manage your privacy settings anytime.</p>
   `);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const config = useMemo(
     () =>
@@ -74,18 +78,13 @@ const PrivacyPolicyEditor = () => {
           list: '12,14,16,18,20,24,28,32',
         },
       },
-
       askBeforePasteHTML: false,
       askBeforePasteFromWord: false,
-
-      // ✅ Stop error
       defaultActionOnPaste: 'clear',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any),
     []
   );
-
-
 
   const formatDate = (date: Date): string => {
     const options: Intl.DateTimeFormatOptions = {
@@ -99,12 +98,59 @@ const PrivacyPolicyEditor = () => {
     return date.toLocaleString('en-GB', options).replace(',', ' at');
   };
 
-  const handleSave = () => {
-    console.log('Saving privacy policy:', content);
-    alert('Privacy Policy saved successfully!');
+  // Fetch existing privacy policy on component mount
+  useEffect(() => {
+    const fetchPrivacy = async () => {
+      try {
+        const res = await getPrivacy();
+        if (res.success && res.data) {
+          setContent(res.data.privacyPolicy || '');
+          setLastUpdated(formatDate(new Date(res.data.updatedAt || res.data.createdAt)));
+        } else {
+          setLastUpdated(formatDate(new Date()));
+        }
+      } catch (error) {
+        console.error('Error fetching privacy policy:', error);
+        setLastUpdated(formatDate(new Date()));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPrivacy();
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const res = await createPrivacy({ content });
+      if (res.success) {
+        toast.success(res.message || 'Privacy Policy saved successfully');
+        // Update the last updated timestamp
+        setLastUpdated(formatDate(new Date()));
+
+        // Optionally refetch to ensure sync with server
+        if (res.data) {
+          setContent(res.data.content);
+        }
+      } else {
+        toast.error(res.message || 'Failed to save Privacy Policy');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('An error occurred while saving');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const lastUpdated = formatDate(new Date('2025-08-25T15:25:00'));
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96 text-[#FDD3C6]">
+        <p>Loading editor...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="text-[#FDD3C6]">
@@ -204,11 +250,12 @@ const PrivacyPolicyEditor = () => {
   }
 `}</style>
 
-
       <div className="text-[#FDD3C6] mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <p className="text-base text-[#FDD3C6]">Last Updated on {lastUpdated}</p>
+          <p className="text-base text-[#FDD3C6]">
+            Last Updated on {lastUpdated || formatDate(new Date())}
+          </p>
         </div>
 
         {/* Jodit Editor */}
@@ -226,9 +273,10 @@ const PrivacyPolicyEditor = () => {
         <div className="flex justify-center mt-6">
           <Button
             onClick={handleSave}
+            disabled={isSaving}
             className="bg-[#8b4513] hover:bg-[#a0522d] text-white px-12 py-2 rounded-md"
           >
-            Save
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </div>
       </div>
