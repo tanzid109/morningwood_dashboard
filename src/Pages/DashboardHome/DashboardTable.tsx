@@ -105,7 +105,7 @@ export default function DashboardTable() {
             <h2 className="text-[#FDD3C6] my-4 text-2xl font-semibold">
                 Recently Joined Creators
             </h2>
-            <DataTable columns={columns} data={users} />
+            <DataTable columns={columns} data={users.slice(0, 5)} />
         </div>
     );
 }

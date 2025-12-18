@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
     ColumnDef,
     useReactTable,
@@ -62,7 +62,7 @@ export default function CategoryTable() {
     const [coverPhotoFile, setCoverPhotoFile] = useState<File | null>(null);
 
     // Fetch categories from API with pagination
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
             setLoading(true);
 
@@ -87,11 +87,11 @@ export default function CategoryTable() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [pageIndex, pageSize]);
 
     useEffect(() => {
         fetchCategories();
-    }, [pageIndex, pageSize]);
+    }, [fetchCategories]);
 
     // Filtered search (client-side for current page)
     const filteredData = useMemo(() => {

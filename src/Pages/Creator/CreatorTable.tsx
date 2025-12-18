@@ -142,6 +142,15 @@ const CreatorTable = () => {
 
     const columns: ColumnDef<TableUser>[] = [
         {
+            accessorKey: "SL",
+            header: () => <div className="text-center">ID</div>,
+            cell: ({ row }) => (
+                <div className="text-center">
+                    <span>{(row.original._id).substring(0, 8) || "N/A"}</span>
+                </div>
+            ),
+        },
+        {
             accessorKey: "channelName",
             header: () => <div className="text-left">Channel Name</div>,
             cell: ({ row }) => (
