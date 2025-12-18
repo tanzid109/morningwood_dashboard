@@ -8,13 +8,23 @@ import {
     ColumnFiltersState,
 } from "@tanstack/react-table";
 import { useState, useMemo, useEffect } from "react";
-import { Search, ChevronRight, ChevronLeft } from "lucide-react";
+import { Search, ChevronRight, ChevronLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { DataTable } from "@/Shared/Table/Table";
-import { getAllUsers } from "@/Server/Creators";
+import { getAllUsers, deleteUser } from "@/Server/Creators";
+import Image from "next/image";
 
 interface User {
     _id: string;
@@ -23,12 +33,11 @@ interface User {
     image: string;
     status: string;
     verified: boolean;
-    creatorStats: {
-        totalFollowers: number;
-        totalStreams: number;
-        totalStreamViews: number;
-        totalLikes: number;
-    };
+    followers: number;
+    likes: number;
+    views: number;
+    streams: number;
+    createdAt: string;
     channelName?: string;
     username?: string;
 }
@@ -46,8 +55,10 @@ const CreatorTable = () => {
     const [globalFilter, setGlobalFilter] = useState("");
     const [sortOption, setSortOption] = useState<string>("newold");
     const [rowSelection, setRowSelection] = useState({});
-    const [actionValue, setActionValue] = useState<string>("");
     const [totalUsers, setTotalUsers] = useState(0);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<TableUser | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     // Fetch users from API with pagination
     useEffect(() => {
@@ -55,26 +66,37 @@ const CreatorTable = () => {
             try {
                 setLoading(true);
 
-                // Call API with pagination parameters
                 const response = await getAllUsers({
-                    page: pageIndex + 1, // API pages start from 1
+                    page: pageIndex + 1,
                     limit: pageSize
                 });
 
-                if (response.success && response.data?.users) {
-                    // Transform the API data to include joinedOn date
-                    const transformedUsers = response.data.users.map((user: User) => ({
+                if (response.success && response.data) {
+                    const transformedUsers = response.data.map((user: User) => ({
                         ...user,
                         joinedOn: new Date(parseInt(user._id.substring(0, 8), 16) * 1000).toISOString().split('T')[0]
                     }));
                     setUsers(transformedUsers);
-                    setTotalUsers(response.data.total || transformedUsers.length);
+
+                    const total = response.total || response.totalCount || response.pagination?.total || response.meta?.total;
+
+                    if (total !== undefined) {
+                        setTotalUsers(total);
+                    } else {
+                        // Fallback: if no total in response, use current data length
+                        console.warn('No total count found in API response. Using data length as fallback.');
+                        setTotalUsers(transformedUsers.length);
+                    }
                 } else {
                     toast.error(response.message || "Failed to fetch users");
+                    setUsers([]);
+                    setTotalUsers(0);
                 }
             } catch (error) {
                 console.error("Error fetching users:", error);
                 toast.error("An error occurred while fetching users");
+                setUsers([]);
+                setTotalUsers(0);
             } finally {
                 setLoading(false);
             }
@@ -83,7 +105,6 @@ const CreatorTable = () => {
         fetchUsers();
     }, [pageIndex, pageSize]);
 
-    // Helper function to format numbers
     const formatNumber = (num: number): string => {
         if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)} B`;
         if (num >= 1000000) return `${(num / 1000000).toFixed(1)} M`;
@@ -91,38 +112,46 @@ const CreatorTable = () => {
         return num.toString();
     };
 
+    const handleDeleteUser = async () => {
+        if (!userToDelete) return;
+
+        try {
+            setDeleting(true);
+            const response = await deleteUser(userToDelete._id);
+
+            if (response.success) {
+                toast.success("Creator deleted successfully");
+                setUsers(users.filter(user => user._id !== userToDelete._id));
+                setTotalUsers(prev => prev - 1);
+                setDeleteDialogOpen(false);
+                setUserToDelete(null);
+
+                if (users.length === 1 && pageIndex > 0) {
+                    setPageIndex(pageIndex - 1);
+                }
+            } else {
+                toast.error(response.message || "Failed to delete creator");
+            }
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            toast.error("An error occurred while deleting the creator");
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     const columns: ColumnDef<TableUser>[] = [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected() ||
-                        (table.getIsSomePageRowsSelected() && "indeterminate")
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-        },
         {
             accessorKey: "channelName",
             header: () => <div className="text-left">Channel Name</div>,
             cell: ({ row }) => (
                 <div className="flex justify-stretch items-center gap-2">
                     {row.original.image ? (
-                        <img
+                        <Image
                             src={row.original.image}
                             alt={row.original.channelName || "Channel"}
+                            width={96}
+                            height={56}
                             className="h-14 w-24 rounded-2xl object-cover"
                         />
                     ) : (
@@ -155,7 +184,7 @@ const CreatorTable = () => {
             header: () => <div className="text-center">Followers</div>,
             cell: ({ row }) => (
                 <div className="text-center">
-                    <span>{formatNumber(row.original.creatorStats.totalFollowers)}</span>
+                    <span>{formatNumber(row.original.followers)}</span>
                 </div>
             ),
         },
@@ -164,7 +193,7 @@ const CreatorTable = () => {
             header: () => <div className="text-center">Views</div>,
             cell: ({ row }) => (
                 <div className="text-center">
-                    <span>{formatNumber(row.original.creatorStats.totalStreamViews)}</span>
+                    <span>{formatNumber(row.original.views)}</span>
                 </div>
             ),
         },
@@ -173,17 +202,37 @@ const CreatorTable = () => {
             header: () => <div className="text-center">Likes</div>,
             cell: ({ row }) => (
                 <div className="text-center">
-                    <span>{formatNumber(row.original.creatorStats.totalLikes)}</span>
+                    <span>{formatNumber(row.original.likes)}</span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "_id",
+            header: () => <div className="text-center">Action</div>,
+            cell: ({ row }) => (
+                <div className="text-center">
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                            setUserToDelete(row.original);
+                            setDeleteDialogOpen(true);
+                        }}
+                        className="gap-2"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                    </Button>
                 </div>
             ),
         },
     ];
 
-    // Filtering and Sorting logic (client-side for current page)
+    // Apply client-side filtering and sorting ONLY for display
+    // This doesn't affect pagination
     const filteredData = useMemo(() => {
         let filtered = users;
 
-        // Apply search filter
         if (globalFilter) {
             const searchValue = globalFilter.toLowerCase();
             filtered = filtered.filter((user) =>
@@ -196,7 +245,6 @@ const CreatorTable = () => {
             );
         }
 
-        // Apply sorting
         const sorted = [...filtered];
         switch (sortOption) {
             case "newold":
@@ -206,22 +254,22 @@ const CreatorTable = () => {
                 sorted.sort((a, b) => new Date(a.joinedOn).getTime() - new Date(b.joinedOn).getTime());
                 break;
             case "FHL":
-                sorted.sort((a, b) => b.creatorStats.totalFollowers - a.creatorStats.totalFollowers);
+                sorted.sort((a, b) => b.followers - a.followers);
                 break;
             case "FLH":
-                sorted.sort((a, b) => a.creatorStats.totalFollowers - b.creatorStats.totalFollowers);
+                sorted.sort((a, b) => a.followers - b.followers);
                 break;
             case "VHL":
-                sorted.sort((a, b) => b.creatorStats.totalStreamViews - a.creatorStats.totalStreamViews);
+                sorted.sort((a, b) => b.views - a.views);
                 break;
             case "VLH":
-                sorted.sort((a, b) => a.creatorStats.totalStreamViews - b.creatorStats.totalStreamViews);
+                sorted.sort((a, b) => a.views - b.views);
                 break;
             case "LHL":
-                sorted.sort((a, b) => b.creatorStats.totalLikes - a.creatorStats.totalLikes);
+                sorted.sort((a, b) => b.likes - a.likes);
                 break;
             case "LLH":
-                sorted.sort((a, b) => a.creatorStats.totalLikes - b.creatorStats.totalLikes);
+                sorted.sort((a, b) => a.likes - b.likes);
                 break;
             default:
                 break;
@@ -233,8 +281,8 @@ const CreatorTable = () => {
     const table = useReactTable({
         data: filteredData,
         columns,
-        pageCount: Math.ceil(totalUsers / pageSize), // Use total from API
-        manualPagination: true, // Tell the table we're handling pagination
+        pageCount: Math.ceil(totalUsers / pageSize),
+        manualPagination: true,
         state: {
             pagination: { pageIndex, pageSize },
             columnFilters,
@@ -258,48 +306,6 @@ const CreatorTable = () => {
         getFilteredRowModel: getFilteredRowModel(),
     });
 
-    // Handle bulk actions
-    const handleAction = (action: string) => {
-        const selectedRows = table.getSelectedRowModel().rows;
-
-        if (selectedRows.length === 0) {
-            toast.error("Please select at least one user");
-            setActionValue("");
-            return;
-        }
-
-        const selectedUsers = selectedRows.map(row => row.original);
-
-        switch (action) {
-            case "delete":
-                if (confirm(`Are you sure you want to delete ${selectedRows.length} user(s)?`)) {
-                    const updatedUsers = users.filter(user =>
-                        !selectedUsers.some(selected => selected._id === user._id)
-                    );
-                    setUsers(updatedUsers);
-                    setRowSelection({});
-                    toast.success(`${selectedRows.length} user(s) deleted successfully`);
-                }
-                break;
-
-            case "export":
-                const exportData = selectedUsers.map(user => ({
-                    channelName: user.channelName,
-                    username: user.username,
-                    email: user.email,
-                    followers: user.creatorStats.totalFollowers,
-                    views: user.creatorStats.totalStreamViews,
-                    likes: user.creatorStats.totalLikes,
-                    joinedOn: user.joinedOn
-                }));
-                console.log("Exporting:", exportData);
-                toast.success(`Exporting ${selectedRows.length} user(s)`);
-                setRowSelection({});
-                break;
-        }
-        setActionValue("");
-    };
-
     const selectedCount = table.getSelectedRowModel().rows.length;
 
     if (loading) {
@@ -314,50 +320,21 @@ const CreatorTable = () => {
         <div>
             <h2 className="text-[#FDD3C6] text-4xl font-semibold my-3 px-2">Creators</h2>
 
-            {/* Search & Filters */}
             <div className="py-6 flex flex-col md:flex-row justify-between items-center my-6 gap-4">
-                {/* Search Input */}
                 <div className="relative w-full md:w-auto">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#FDD3C6] w-4 h-4" />
                     <input
                         type="text"
                         placeholder="Search creators..."
                         value={globalFilter}
-                        onChange={(e) => {
-                            setGlobalFilter(e.target.value);
-                            setPageIndex(0);
-                        }}
-                        className="shadow rounded-md border py-2 pl-10 pr-8 text-[#FDD3C6] focus:ring-2 focus:ring-[#635BFF] focus:outline-none cursor-pointer w-full md:w-80"
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        className="shadow rounded-md border py-2 pl-10 pr-8 text-[#FDD3C6] focus:ring-2 focus:ring-[#FDD3C6] focus:outline-none w-full md:w-80"
                     />
                 </div>
 
-                {/* Filters */}
                 <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 w-full md:w-auto">
-                    {/* Action Select */}
-                    <Select
-                        value={actionValue}
-                        onValueChange={(value) => {
-                            setActionValue(value);
-                            handleAction(value);
-                        }}
-                    >
-                        <SelectTrigger className={`w-[180px] ${selectedCount > 0 ? 'border-[#635BFF] border-2' : ''}`}>
-                            <SelectValue placeholder={selectedCount > 0 ? `Action (${selectedCount})` : "Action"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Action</SelectLabel>
-                                <SelectItem value="delete">Delete</SelectItem>
-                                <SelectItem value="export">Export</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Sort Select */}
-                    <Select value={sortOption} onValueChange={(value) => {
-                        setSortOption(value);
-                        setPageIndex(0);
-                    }}>
+                    {/* <p className="text-[#FDD3C6] font-semibold text-xl">Filter</p> */}
+                    <Select value={sortOption} onValueChange={setSortOption}>
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Sorting" />
                         </SelectTrigger>
@@ -378,18 +355,14 @@ const CreatorTable = () => {
                 </div>
             </div>
 
-            {/* Table */}
             <DataTable columns={columns} data={filteredData} />
 
-            {/* Results */}
             <div className="mt-2 text-sm text-center text-[#FDD3C6]">
-                Showing {((pageIndex) * pageSize) + 1} to {Math.min((pageIndex + 1) * pageSize, totalUsers)} of {totalUsers} results
+                Showing {Math.min((pageIndex * pageSize) + 1, totalUsers)} to {Math.min((pageIndex + 1) * pageSize, totalUsers)} of {totalUsers} results
                 {selectedCount > 0 && <span className="ml-2 font-semibold">({selectedCount} selected)</span>}
             </div>
 
-            {/* Pagination */}
             <div className="flex flex-col md:flex-row-reverse justify-between items-center gap-4 mt-4">
-                {/* Pagination Controls */}
                 <div className="flex flex-wrap justify-center items-center gap-2">
                     <Button
                         onClick={() => table.previousPage()}
@@ -465,12 +438,14 @@ const CreatorTable = () => {
                     </Button>
                 </div>
 
-                {/* Page Size Selector */}
                 <div className="flex flex-wrap justify-center items-center gap-2">
                     <p className="text-[#FDD3C6] text-sm md:text-base">Show per page</p>
                     <select
                         value={table.getState().pagination.pageSize}
-                        onChange={(e) => table.setPageSize(Number(e.target.value))}
+                        onChange={(e) => {
+                            table.setPageSize(Number(e.target.value));
+                            setPageIndex(0);
+                        }}
                         className="border p-1 rounded-lg bg-[#36190F] text-white font-medium text-sm md:text-base"
                     >
                         {[5, 10, 20].map((size) => (
@@ -481,6 +456,31 @@ const CreatorTable = () => {
                     </select>
                 </div>
             </div>
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the creator account for{" "}
+                            <span className="font-semibold text-foreground">
+                                {userToDelete?.channelName || userToDelete?.username || "this user"}
+                            </span>
+                            . This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteUser}
+                            disabled={deleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {deleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -14,17 +14,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-
-
+}) {
   return (
     <html lang="en">
       <body className={`${sora.variable} antialiased`}>
-        <div>
-          {children}
-        </div>
+        <main>{children}</main>
       </body>
     </html>
   );

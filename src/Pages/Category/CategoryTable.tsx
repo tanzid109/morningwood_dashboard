@@ -171,6 +171,7 @@ export default function CategoryTable() {
 
             if (isEditMode && editingCategory) {
                 // Update existing category
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const updateData: any = {
                     id: editingCategory._id,
                     name: categoryName,

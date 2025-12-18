@@ -43,7 +43,7 @@ export const createPrivacy = async (privacyData: FieldValues) => {
         }
     }
 }
-export const createTerms = async (privacyData: FieldValues) => {
+export const createTerms = async (termsData: FieldValues) => {
     try {
         const cookieStore = await cookies()
         const accessToken = cookieStore.get("accessToken")?.value
@@ -61,7 +61,7 @@ export const createTerms = async (privacyData: FieldValues) => {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${accessToken}`,
             },
-            body: JSON.stringify(privacyData),
+            body: JSON.stringify(termsData),
             credentials: "include",
             cache: "no-store",
         })

@@ -47,8 +47,9 @@ export default function RootLayout({
                     <Image
                       src="/assets/logo.png"
                       alt="Logo"
-                      fill
-                      className="object-contain"
+                      width={64}
+                      height={64}
+                      priority
                     />
                   </Link>
                 </div>
@@ -65,7 +66,6 @@ export default function RootLayout({
               {children}
             </main>
           </SidebarInset>
-
           <Toaster position="top-center" />
         </SidebarProvider>
       </body>
