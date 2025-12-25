@@ -3,7 +3,6 @@ import { Sora } from "next/font/google";
 import "./globals.css";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
-import { NavUserDesk } from "@/components/Home/nav-userDesk";
 import Image from "next/image";
 import Link from "next/link";
 import { AppSidebar } from "@/components/Home/app-sidebar";
@@ -24,15 +23,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
 
-  const data = {
-    user: {
-      channel: "Channel Name",
-      name: "Moriningwood",
-      email: "sana_afrin03@gmail.com",
-      avatar: "/assets/logo.png",
-    },
-  }
-
   return (
     <html lang="en">
       <body className={`${sora.variable} antialiased`}>
@@ -52,12 +42,6 @@ export default function RootLayout({
                       priority
                     />
                   </Link>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 md:gap-6 flex-wrap">
-                <div className="hidden md:flex">
-                  <NavUserDesk user={data.user} />
                 </div>
               </div>
             </header>

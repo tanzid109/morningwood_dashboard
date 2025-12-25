@@ -8,7 +8,7 @@ import {
     ColumnFiltersState,
 } from "@tanstack/react-table";
 import { useState, useMemo, useEffect } from "react";
-import { Search, ChevronRight, ChevronLeft, Trash2 } from "lucide-react";
+import { Search, ChevronRight, ChevronLeft, Trash2, UserX, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { DataTable } from "@/Shared/Table/Table";
-import { getAllUsers, deleteUser } from "@/Server/Creators";
+import { getAllUsers, deleteUser, blockUser, unblockUser } from "@/Server/Creators";
 import Image from "next/image";
 
 interface User {
@@ -40,11 +40,14 @@ interface User {
     createdAt: string;
     channelName?: string;
     username?: string;
+    isBlocked?: boolean;
 }
 
 interface TableUser extends User {
     joinedOn: string;
 }
+
+type ActionType = 'delete' | 'block' | 'unblock';
 
 const CreatorTable = () => {
     const [users, setUsers] = useState<TableUser[]>([]);
@@ -56,9 +59,10 @@ const CreatorTable = () => {
     const [sortOption, setSortOption] = useState<string>("newold");
     const [rowSelection, setRowSelection] = useState({});
     const [totalUsers, setTotalUsers] = useState(0);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState<TableUser | null>(null);
-    const [deleting, setDeleting] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<TableUser | null>(null);
+    const [actionType, setActionType] = useState<ActionType>('delete');
+    const [processing, setProcessing] = useState(false);
 
     // Fetch users from API with pagination
     useEffect(() => {
@@ -74,6 +78,8 @@ const CreatorTable = () => {
                 if (response.success && response.data) {
                     const transformedUsers = response.data.map((user: User) => ({
                         ...user,
+                        // Normalize status to lowercase for consistent checking
+                        status: user.status ? user.status.toLowerCase() : 'active',
                         joinedOn: new Date(parseInt(user._id.substring(0, 8), 16) * 1000).toISOString().split('T')[0]
                     }));
                     setUsers(transformedUsers);
@@ -83,7 +89,6 @@ const CreatorTable = () => {
                     if (total !== undefined) {
                         setTotalUsers(total);
                     } else {
-                        // Fallback: if no total in response, use current data length
                         console.warn('No total count found in API response. Using data length as fallback.');
                         setTotalUsers(transformedUsers.length);
                     }
@@ -112,31 +117,101 @@ const CreatorTable = () => {
         return num.toString();
     };
 
-    const handleDeleteUser = async () => {
-        if (!userToDelete) return;
+    const openDialog = (user: TableUser, action: ActionType) => {
+        setSelectedUser(user);
+        setActionType(action);
+        setDialogOpen(true);
+    };
+
+    const handleAction = async () => {
+        if (!selectedUser) return;
 
         try {
-            setDeleting(true);
-            const response = await deleteUser(userToDelete._id);
+            setProcessing(true);
+            let response;
+            let successMessage = '';
+
+            switch (actionType) {
+                case 'delete':
+                    response = await deleteUser(selectedUser._id);
+                    successMessage = "Creator deleted successfully";
+                    break;
+                case 'block':
+                    response = await blockUser(selectedUser._id);
+                    successMessage = "Creator blocked successfully";
+                    break;
+                case 'unblock':
+                    response = await unblockUser(selectedUser._id);
+                    successMessage = "Creator unblocked successfully";
+                    break;
+            }
 
             if (response.success) {
-                toast.success("Creator deleted successfully");
-                setUsers(users.filter(user => user._id !== userToDelete._id));
-                setTotalUsers(prev => prev - 1);
-                setDeleteDialogOpen(false);
-                setUserToDelete(null);
+                toast.success(successMessage);
 
-                if (users.length === 1 && pageIndex > 0) {
+                // Update the user in the list or remove them
+                if (actionType === 'delete') {
+                    setUsers(users.filter(user => user._id !== selectedUser._id));
+                    setTotalUsers(prev => prev - 1);
+                } else if (actionType === 'block') {
+                    // Update the user's status to blocked
+                    setUsers(users.map(user =>
+                        user._id === selectedUser._id
+                            ? { ...user, status: 'blocked', isBlocked: true }
+                            : user
+                    ));
+                } else if (actionType === 'unblock') {
+                    // Update the user's status to active
+                    setUsers(users.map(user =>
+                        user._id === selectedUser._id
+                            ? { ...user, status: 'active', isBlocked: false }
+                            : user
+                    ));
+                }
+
+                setDialogOpen(false);
+                setSelectedUser(null);
+
+                // If we deleted the last item on the page, go to previous page
+                if (actionType === 'delete' && users.length === 1 && pageIndex > 0) {
                     setPageIndex(pageIndex - 1);
                 }
             } else {
-                toast.error(response.message || "Failed to delete creator");
+                toast.error(response.message || `Failed to ${actionType} creator`);
             }
         } catch (error) {
-            console.error("Error deleting user:", error);
-            toast.error("An error occurred while deleting the creator");
+            console.error(`Error ${actionType}ing user:`, error);
+            toast.error(`An error occurred while ${actionType}ing the creator`);
         } finally {
-            setDeleting(false);
+            setProcessing(false);
+        }
+    };
+
+    const getDialogContent = () => {
+        const userName = selectedUser?.channelName || selectedUser?.username || "this user";
+
+        switch (actionType) {
+            case 'delete':
+                return {
+                    title: "Delete Creator Account?",
+                    description: `This will permanently delete the creator account for ${userName}. This action cannot be undone.`,
+                    actionText: processing ? "Deleting..." : "Delete",
+                    actionClass: "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                };
+            case 'block':
+                return {
+                    title: "Block Creator Account?",
+                    description: `This will block ${userName} from accessing their account. You can unblock them later.`,
+                    actionText: processing ? "Blocking..." : "Block",
+                    actionClass: "bg-orange-600 text-white hover:bg-orange-700"
+                };
+            case 'unblock':
+                return {
+                    title: "Unblock Creator Account?",
+                    description: `This will restore access for ${userName}. They will be able to use their account again.`,
+                    actionText: processing ? "Unblocking..." : "Unblock",
+                    actionClass: "bg-green-600 text-white hover:bg-green-700"
+                };
         }
     };
 
@@ -218,27 +293,48 @@ const CreatorTable = () => {
         {
             accessorKey: "_id",
             header: () => <div className="text-center">Action</div>,
-            cell: ({ row }) => (
-                <div className="text-center">
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                            setUserToDelete(row.original);
-                            setDeleteDialogOpen(true);
-                        }}
-                        className="gap-2"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                    </Button>
-                </div>
-            ),
+            cell: ({ row }) => {
+                // Check both status and isBlocked for compatibility
+                const isBlocked = row.original.status === 'blocked' || row.original.isBlocked === true;
+
+                return (
+                    <div className="text-center flex justify-center items-center gap-2">
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => openDialog(row.original, 'delete')}
+                            className="gap-2"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                        </Button>
+                        {isBlocked ? (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => openDialog(row.original, 'unblock')}
+                                className="gap-2 bg-green-600 hover:bg-green-700"
+                            >
+                                <UserCheck className="h-4 w-4" />
+                                Unblock
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => openDialog(row.original, 'block')}
+                                className="gap-2 bg-orange-600 hover:bg-orange-700"
+                            >
+                                <UserX className="h-4 w-4" />
+                                Block
+                            </Button>
+                        )}
+                    </div>
+                );
+            },
         },
     ];
 
-    // Apply client-side filtering and sorting ONLY for display
-    // This doesn't affect pagination
     const filteredData = useMemo(() => {
         let filtered = users;
 
@@ -316,6 +412,7 @@ const CreatorTable = () => {
     });
 
     const selectedCount = table.getSelectedRowModel().rows.length;
+    const dialogContent = getDialogContent();
 
     if (loading) {
         return (
@@ -342,7 +439,6 @@ const CreatorTable = () => {
                 </div>
 
                 <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 w-full md:w-auto">
-                    {/* <p className="text-[#FDD3C6] font-semibold text-xl">Filter</p> */}
                     <Select value={sortOption} onValueChange={setSortOption}>
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Sorting" />
@@ -466,26 +562,22 @@ const CreatorTable = () => {
                 </div>
             </div>
 
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{dialogContent.title}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the creator account for{" "}
-                            <span className="font-semibold text-foreground">
-                                {userToDelete?.channelName || userToDelete?.username || "this user"}
-                            </span>
-                            . This action cannot be undone.
+                            {dialogContent.description}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={handleDeleteUser}
-                            disabled={deleting}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={handleAction}
+                            disabled={processing}
+                            className={dialogContent.actionClass}
                         >
-                            {deleting ? "Deleting..." : "Delete"}
+                            {dialogContent.actionText}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

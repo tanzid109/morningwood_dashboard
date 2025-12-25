@@ -29,7 +29,7 @@ export const getAllCategory = async (params?: GetAllCategoryParams) => {
         }
 
         const queryString = queryParams.toString();
-        const url = `${process.env.NEXT_PUBLIC_BASE_API}/api/v1/categories${queryString ? `?${queryString}` : ''}`;
+        const url = `${process.env.NEXT_PUBLIC_BASE_API}/api/v1/admin/categories${queryString ? `?${queryString}` : ''}`;
 
         const res = await fetch(url, {
             method: "GET",
@@ -84,7 +84,7 @@ export const createCategory = async (categoryData: FieldValues) => {
             formData.append("coverPhoto", categoryData.coverPhoto);
         }
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_API}/api/v1/categories/create-category`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_API}/api/v1/admin/categories/create-category`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${accessToken}`,
@@ -138,7 +138,7 @@ export const updateCategory = async (categoryData: FieldValues) => {
             formData.append("coverPhoto", categoryData.coverPhoto);
         }
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_API}/api/v1/categories/update/${categoryData.id}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_API}/api/v1/admin/categories/${categoryData.id}`, {
             method: "PATCH",
             headers: {
                 "Authorization": `Bearer ${accessToken}`,
