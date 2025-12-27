@@ -3,6 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { getDashboardStats } from '@/Server/Dashboard/Index';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 interface StatCardProps {
     value: string;
@@ -25,13 +26,14 @@ const UsageOverview = () => {
         const fetchStats = async () => {
             try {
                 const allStats = await getDashboardStats();
-                console.log(allStats.data);
+                // console.log(allStats.data);
 
                 if (allStats?.data) {
                     setStatsData(allStats.data);
                 }
             } catch (error) {
-                console.error('Error fetching stats:', error);
+                // console.error('Error fetching stats:', error);
+                toast.error(error as string || "An error occurred while fetching stats");
             } finally {
                 setLoading(false);
             }

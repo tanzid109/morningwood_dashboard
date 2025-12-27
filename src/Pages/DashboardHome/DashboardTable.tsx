@@ -39,8 +39,8 @@ export default function DashboardTable() {
                     toast.error(res?.message || "Failed to load users");
                 }
             } catch (error) {
-                console.error("Error fetching users:", error);
-                toast.error("An error occurred while fetching users");
+                // console.error("Error fetching users:", error);
+                toast.error(error as string || "An error occurred while fetching users");
             } finally {
                 setLoading(false);
             }
@@ -48,7 +48,7 @@ export default function DashboardTable() {
 
         recentUsers();
     }, []);
-    console.log(users);
+    // console.log(users);
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">

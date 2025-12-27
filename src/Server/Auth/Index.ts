@@ -12,33 +12,6 @@ const getSecureCookieOptions = () => ({
     path: "/",
 });
 
-
-export const getOtp = async (otpData: FieldValues) => {
-    const { signupToken, ...rest } = otpData;
-
-    try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_API}/api/v1/auth/verify-otp`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-signup-token": signupToken, // ✅ Correct header name
-            },
-            body: JSON.stringify(rest), // Only send otp in body
-            cache: "no-store",
-        })
-
-        const data = await res.json()
-        if (data.success) {
-            (await cookies()).set("accessToken", data?.data?.accessToken, getSecureCookieOptions())
-        }
-        return data
-    } catch (error) {
-        console.error("Error verifying OTP:", error)
-        throw error
-    }
-}
-
-
 export const resendOtp = async (otpResend: FieldValues) => {
     const { signupToken, ...rest } = otpResend;
     try {

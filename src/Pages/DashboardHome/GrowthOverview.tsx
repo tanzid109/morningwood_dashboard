@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { getGrowthOverview } from "@/Server/Dashboard/Index";
+import { toast } from "sonner";
 
 /* ---------------- constants ---------------- */
 const MONTHS = [
@@ -117,7 +118,8 @@ export default function GrowthOverview() {
 
             setChartData(buildMonthlyData(monthlyCreators, liveStreams));
         } catch (error) {
-            console.error("Growth overview error:", error);
+            // console.error("Growth overview error:", error);
+            toast.error(error as string || "Failed to load growth overview data");
         }
     };
 

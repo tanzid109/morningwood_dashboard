@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -39,6 +38,7 @@ export default function ResetPasswordForm() {
     });
 
     const { watch, formState: { isSubmitting } } = form;
+    // eslint-disable-next-line react-hooks/incompatible-library
     const password = watch("password");
     const passwordConfirm = watch("Cpassword");
 
@@ -55,7 +55,7 @@ export default function ResetPasswordForm() {
                 confirmPassword: data.Cpassword,
             });
 
-            console.log(res);
+            // console.log(res);
 
             if (res.success) {
                 toast.success(res.message);
@@ -64,8 +64,8 @@ export default function ResetPasswordForm() {
                 toast.error(res.message || "Failed to reset password.");
             }
         } catch (error) {
-            console.error(error);
-            toast.error("Failed to reset password. Please try again.");
+            // console.error(error);
+            toast.error(error as string || "Something went wrong. Please try again.");
         }
     };
 

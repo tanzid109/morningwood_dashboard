@@ -36,10 +36,10 @@ export default function VerifyForm() {
         try {
             const res = await verifyOtp({
                 otp: data.otp,
-                token: token, // Pass the reset token from URL
+                token: token,
             });
 
-            console.log(res);
+            // console.log(res);
 
             if (res.success) {
                 // Pass the same reset token to the reset password page
@@ -49,8 +49,8 @@ export default function VerifyForm() {
                 toast.error(res.message);
             }
         } catch (error) {
-            console.error("OTP verification failed:", error);
-            toast.error("Verification failed. Please try again.");
+            // console.error("OTP verification failed:", error);
+            toast.error(error as string || "Verification failed. Please try again.");
         }
     };
 

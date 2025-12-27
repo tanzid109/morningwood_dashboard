@@ -72,8 +72,8 @@ export default function Security() {
                 toast.error(res.message || "Failed to change password");
             }
         } catch (error) {
-            console.error("Password change error:", error);
-            toast.error("An error occurred. Please try again.");
+            // console.error("Password change error:", error);
+            toast.error(error as string || "An error occurred. Please try again.");
         }
     };
 

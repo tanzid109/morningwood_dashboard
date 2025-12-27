@@ -95,8 +95,8 @@ export default function ContentTable() {
                     setTotalStreams(0);
                 }
             } catch (error) {
-                console.error("Error fetching streams:", error);
-                toast.error("An error occurred while fetching streams");
+                // console.error("Error fetching streams:", error);
+                toast.error(error as string || "An error occurred while fetching streams");
                 setStreams([]);
                 setTotalStreams(0);
             } finally {
@@ -138,8 +138,8 @@ export default function ContentTable() {
                 setPageIndex(pageIndex - 1);
             }
         } catch (error) {
-            console.error("Error deleting stream:", error);
-            toast.error("An error occurred while deleting the stream");
+            // console.error("Error deleting stream:", error);
+            toast.error(error as string || "An error occurred while deleting the stream");
         } finally {
             setProcessing(false);
         }

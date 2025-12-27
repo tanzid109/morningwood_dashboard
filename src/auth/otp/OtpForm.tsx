@@ -29,7 +29,7 @@ export default function OtpForm() {
 
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
         try {
-            console.log("Entered OTP:", data.otp);
+            // console.log("Entered OTP:", data.otp);
             // simulate API delay
             await new Promise((resolve) => setTimeout(resolve, 2000));
             router.push("/credential");

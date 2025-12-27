@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import { useState, useRef, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -109,7 +110,8 @@ const TermsEditor = () => {
           setLastUpdated(formatDate(new Date()));
         }
       } catch (error) {
-        console.error('Error fetching terms:', error);
+        // console.error('Error fetching terms:', error);
+        toast.error(error as string || 'Failed to load Terms and Conditions');
         setLastUpdated(formatDate(new Date()));
       } finally {
         setIsLoading(false);
@@ -136,8 +138,8 @@ const TermsEditor = () => {
         toast.error(res.message || 'Failed to save Terms & Conditions');
       }
     } catch (error) {
-      console.error(error);
-      toast.error('An error occurred while saving');
+      // console.error(error);
+      toast.error(error as string || 'An error occurred while saving');
     } finally {
       setIsSaving(false);
     }

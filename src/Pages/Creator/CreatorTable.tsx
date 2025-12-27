@@ -98,8 +98,8 @@ const CreatorTable = () => {
                     setTotalUsers(0);
                 }
             } catch (error) {
-                console.error("Error fetching users:", error);
-                toast.error("An error occurred while fetching users");
+                // console.error("Error fetching users:", error);
+                toast.error(error as string || "An error occurred while fetching users");
                 setUsers([]);
                 setTotalUsers(0);
             } finally {
@@ -180,8 +180,8 @@ const CreatorTable = () => {
                 toast.error(response.message || `Failed to ${actionType} creator`);
             }
         } catch (error) {
-            console.error(`Error ${actionType}ing user:`, error);
-            toast.error(`An error occurred while ${actionType}ing the creator`);
+            // console.error(`Error ${actionType}ing user:`, error);
+            toast.error(error as string || `An error occurred while ${actionType}ing the creator`);
         } finally {
             setProcessing(false);
         }

@@ -82,8 +82,8 @@ export default function CategoryTable() {
                 toast.error(response.message || "Failed to fetch categories");
             }
         } catch (error) {
-            console.error("Error fetching categories:", error);
-            toast.error("An error occurred while fetching categories");
+            // console.error("Error fetching categories:", error);
+            toast.error(error as string || "An error occurred while fetching categories");
         } finally {
             setLoading(false);
         }
@@ -232,8 +232,8 @@ export default function CategoryTable() {
                 }
             }
         } catch (error) {
-            console.error("Error saving category:", error);
-            toast.error("An error occurred while saving the category");
+            // console.error("Error saving category:", error);
+            toast.error(error as string || "An error occurred while saving the category");
         } finally {
             setIsSubmitting(false);
         }

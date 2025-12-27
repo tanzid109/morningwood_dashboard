@@ -46,11 +46,11 @@ export default function LoginForm() {
                 password: data.password,
             };
 
-            console.log("Submitting login data:", LoginData);
+            // console.log("Submitting login data:", LoginData);
 
             const res = await loginUser(LoginData);
 
-            console.log(" Login response received:", res);
+            // console.log(" Login response received:", res);
 
             if (res?.success) {
                 toast.success(res.message || "Login successful!");

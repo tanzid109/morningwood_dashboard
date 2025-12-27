@@ -25,7 +25,8 @@ const LoggedUser = () => {
                     setPhoto(result.data.image?.url || "");
                 }
             } catch (error) {
-                console.error("Failed to load channel details:", error);
+                // console.error("Failed to load channel details:", error);
+                toast.error(error as string || "Something went wrong. Please try again.");
             }
         };
 

@@ -54,7 +54,7 @@ export default function UpdateProfile() {
             if (data.photo) formData.append("img", data.photo)
 
             const res = await changeUserNamePhoto(formData)
-            console.log(res)
+            // console.log(res)
 
             if (res.success) {
                 toast.success(res.message || "Profile updated successfully")
@@ -62,8 +62,8 @@ export default function UpdateProfile() {
                 toast.error(res.message || "Failed to update profile")
             }
         } catch (error) {
-            console.error("Error updating profile:", error)
-            toast.error("An unexpected error occurred")
+            // console.error("Error updating profile:", error)
+            toast.error(error as string || "An unexpected error occurred")
         } finally {
             setLoading(false)
         }

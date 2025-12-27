@@ -110,7 +110,8 @@ const PrivacyPolicyEditor = () => {
           setLastUpdated(formatDate(new Date()));
         }
       } catch (error) {
-        console.error('Error fetching privacy policy:', error);
+        // console.error('Error fetching privacy policy:', error);
+        toast.error(error as string || 'Failed to load Privacy Policy');
         setLastUpdated(formatDate(new Date()));
       } finally {
         setIsLoading(false);
@@ -137,8 +138,8 @@ const PrivacyPolicyEditor = () => {
         toast.error(res.message || 'Failed to save Privacy Policy');
       }
     } catch (error) {
-      console.error(error);
-      toast.error('An error occurred while saving');
+      // console.error(error);
+      toast.error(error as string || 'An error occurred while saving');
     } finally {
       setIsSaving(false);
     }
