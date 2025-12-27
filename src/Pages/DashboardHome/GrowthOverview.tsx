@@ -1,121 +1,221 @@
-"use client"
-import { Card } from '@/components/ui/card';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { TrendingDown, TrendingUp } from 'lucide-react';
+/* eslint-disable react-hooks/immutability */
+"use client";
 
-// Generate sample data for the chart
-const generateData = () => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
-    return months.map((month) => ({
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    ResponsiveContainer,
+} from "recharts";
+import { TrendingDown, TrendingUp } from "lucide-react";
+import { getGrowthOverview } from "@/Server/Dashboard/Index";
+
+/* ---------------- constants ---------------- */
+const MONTHS = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
+/* ---------------- types ---------------- */
+type MonthlyStat = {
+    _id: string; // YYYY-MM
+    count: number;
+};
+
+type GrowthApiResponse = {
+    success: boolean;
+    data: {
+        totalCreators: number;
+        totalLiveStreamers: number;
+        newCreatorsLastMonth: number;
+        liveStreamsLastMonth: number;
+        monthlyCreators: MonthlyStat[];
+        liveStreams: MonthlyStat[];
+    };
+};
+
+type ChartItem = {
+    month: string;
+    newCreator: number;
+    liveStreams: number;
+};
+
+type Stats = {
+    totalCreators: number;
+    totalLiveStreamers: number;
+    newCreatorsLastMonth: number;
+    liveStreamsLastMonth: number;
+};
+
+/* ---------------- helpers ---------------- */
+const buildMonthlyData = (
+    monthlyCreators: MonthlyStat[],
+    liveStreams: MonthlyStat[]
+): ChartItem[] => {
+    const creatorMap: Record<number, number> = {};
+    const streamMap: Record<number, number> = {};
+
+    monthlyCreators.forEach((item) => {
+        const [, month] = item._id.split("-");
+        creatorMap[Number(month) - 1] = item.count;
+    });
+
+    liveStreams.forEach((item) => {
+        const [, month] = item._id.split("-");
+        streamMap[Number(month) - 1] = item.count;
+    });
+
+    return MONTHS.map((month, index) => ({
         month,
-        newCreator: Math.floor(Math.random() * 40000) + 20000,
-        liveStreams: Math.floor(Math.random() * 30000) + 40000,
+        newCreator: creatorMap[index] ?? 0,
+        liveStreams: streamMap[index] ?? 0,
     }));
 };
 
-const data = generateData();
+const formatNumber = (num: number) =>
+    num >= 1000 ? `${(num / 1000).toFixed(1)}K` : num.toString();
 
+/* ---------------- component ---------------- */
 export default function GrowthOverview() {
+    const [chartData, setChartData] = useState<ChartItem[]>([]);
+    const [stats, setStats] = useState<Stats>({
+        totalCreators: 0,
+        totalLiveStreamers: 0,
+        newCreatorsLastMonth: 0,
+        liveStreamsLastMonth: 0,
+    });
+
+    useEffect(() => {
+        fetchGrowth();
+    }, []);
+
+    const fetchGrowth = async () => {
+        try {
+            const result = (await getGrowthOverview()) as GrowthApiResponse;
+
+            if (!result.success) return;
+
+            const {
+                totalCreators,
+                totalLiveStreamers,
+                newCreatorsLastMonth,
+                liveStreamsLastMonth,
+                monthlyCreators,
+                liveStreams,
+            } = result.data;
+
+            setStats({
+                totalCreators,
+                totalLiveStreamers,
+                newCreatorsLastMonth,
+                liveStreamsLastMonth,
+            });
+
+            setChartData(buildMonthlyData(monthlyCreators, liveStreams));
+        } catch (error) {
+            console.error("Growth overview error:", error);
+        }
+    };
+
     return (
-        <Card className="w-full my-4 bg-[#36190F] p-4 text-white border-none">
-            <div className="flex items-center justify-between mb-6 ">
-                <h2 className="text-xl text-[#FDD3C6] font-semibold">Growth Overview</h2>
-                <span className="text-sm text-[#FDD3C6] border p-1 rounded-md">November 2025</span>
+        <Card className="w-full my-4 bg-[#36190F] p-6 text-white border-none rounded-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl text-[#FDD3C6] font-semibold">
+                    Growth Overview
+                </h2>
+                <span className="text-xs text-[#FDD3C6]/80 border px-3 py-1 rounded-full">
+                    November 2025
+                </span>
             </div>
 
-            <div className="h-64 mb-6">
+            {/* Chart */}
+            <div className="h-64 mb-8">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data}>
+                    <AreaChart data={chartData}>
                         <defs>
-                            <linearGradient id="colorNewCreator" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#d4a574" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#d4a574" stopOpacity={0} />
+                            <linearGradient id="creatorGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#d4a574" stopOpacity={0.4} />
+                                <stop offset="100%" stopColor="#d4a574" stopOpacity={0} />
                             </linearGradient>
-                            <linearGradient id="colorLiveStreams" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#e8d4c4" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#e8d4c4" stopOpacity={0} />
+                            <linearGradient id="streamGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#e8d4c4" stopOpacity={0.4} />
+                                <stop offset="100%" stopColor="#e8d4c4" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#4a3f35" opacity={0.2} />
-                        <XAxis
-                            dataKey="month"
-                            stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
-                            axisLine={false}
-                        />
-                        <YAxis
-                            stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
-                            axisLine={false}
-                            tickFormatter={(value) => `${value / 1000}K`}
-                        />
+
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                        <XAxis dataKey="month" tick={{ fill: "#9ca3af" }} />
+                        <YAxis tick={{ fill: "#9ca3af" }} />
+
                         <Area
                             type="monotone"
                             dataKey="newCreator"
                             stroke="#d4a574"
                             strokeWidth={2}
-                            fillOpacity={1}
-                            fill="url(#colorNewCreator)"
+                            fill="url(#creatorGradient)"
                         />
                         <Area
                             type="monotone"
                             dataKey="liveStreams"
                             stroke="#e8d4c4"
                             strokeWidth={2}
-                            fillOpacity={1}
-                            fill="url(#colorLiveStreams)"
+                            fill="url(#streamGradient)"
                         />
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
-            <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10">
 
-                {/* New Creator */}
-                <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-                    {/* Text Part */}
-                    <div className="flex flex-col items-start gap-1">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-amber-600"></div>
-                            <span className="text-sm text-gray-300">New Creator</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <TrendingDown className="w-4 h-4 text-red-500" />
-                            <span className="text-xs text-red-500">1.3% vs last month</span>
-                        </div>
-                    </div>
-
-                    {/* Number Circle */}
-                    <div className="h-12 w-12 flex justify-center items-center bg-[#4C2C22] rounded-full">
-                        <span className="text-lg font-medium">10K</span>
-                    </div>
-                </div>
-
-                {/* Divider — responsive */}
-                <div className="w-full md:w-auto">
-                    <div className="border-t md:border-t-0 md:border-l border h-0 md:h-12 w-full md:w-0"></div>
-                </div>
-
-                {/* Live Streams */}
-                <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-                    {/* Number Circle */}
-                    <div className="h-12 w-12 flex justify-center items-center bg-[#4C2C22] rounded-full">
-                        <span className="text-lg font-medium">63K</span>
-                    </div>
-
-                    {/* Text Part */}
-                    <div className="flex flex-col items-start gap-1">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-amber-600"></div>
-                            <span className="text-sm text-gray-300">Live Streams</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-red-500" />
-                            <span className="text-xs text-red-500">1.3% vs last month</span>
-                        </div>
-                    </div>
-                </div>
+            {/* Stats */}
+            <div className="flex justify-center gap-12">
+                <StatBlock
+                    label="New Creators"
+                    total={stats.totalCreators}
+                    delta={stats.newCreatorsLastMonth}
+                />
+                <StatBlock
+                    label="Live Streams"
+                    total={stats.totalLiveStreamers}
+                    delta={stats.liveStreamsLastMonth}
+                />
             </div>
-
         </Card>
+    );
+}
+
+/* ---------------- small component ---------------- */
+function StatBlock({
+    label,
+    total,
+    delta,
+}: {
+    label: string;
+    total: number;
+    delta: number;
+}) {
+    const isPositive = delta > 0;
+
+    return (
+        <div className="text-center">
+            <p className="text-sm text-gray-400">{label}</p>
+            <p className="text-2xl font-semibold">{formatNumber(total)}</p>
+            <div className="flex items-center justify-center gap-1 text-xs mt-1">
+                {isPositive ? (
+                    <>
+                        <TrendingUp className="w-4 h-4 text-green-500" />
+                        <span className="text-green-500">+{delta} last month</span>
+                    </>
+                ) : (
+                    <>
+                        <TrendingDown className="w-4 h-4 text-red-500" />
+                        <span className="text-red-500">No growth</span>
+                    </>
+                )}
+            </div>
+        </div>
     );
 }
