@@ -1,12 +1,12 @@
-import ResetPasswordForm from '@/auth/reset_password/ResetPasswordForm';
-import React from 'react';
+import { Suspense } from "react";
+import ResetPasswordForm from "@/auth/reset_password/ResetPasswordForm";
 
-const page = () => {
+const Page = () => {
     return (
-        <div>
-            <ResetPasswordForm/>
-        </div>
+        <Suspense fallback={<div>Loading...</div>}>
+            <ResetPasswordForm />
+        </Suspense>
     );
 };
 
-export default page;
+export default Page;

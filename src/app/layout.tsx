@@ -19,18 +19,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
-    <Providers>
-      <html lang="en">
-        <body className={`${sora.variable} antialiased`}>
-          <div>
-            {children}
-          </div>
+    <html lang="en">
+      <body className={`${sora.variable} antialiased`}>
+        <Providers>
+          {children}
           <Toaster position="top-center" />
-        </body>
-      </html>
-    </Providers>
-
+        </Providers>
+      </body>
+    </html>
   );
 }

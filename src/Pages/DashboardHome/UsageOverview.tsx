@@ -1,5 +1,8 @@
+"use client";
+
 import { Card, CardContent } from '@/components/ui/card';
 import { getDashboardStats } from '@/Server/Dashboard/Index';
+import { useEffect, useState } from 'react';
 
 interface StatCardProps {
     value: string;
@@ -7,18 +10,39 @@ interface StatCardProps {
     description: string;
 }
 
-const UsageOverview = async () => {
-    const allStats = await getDashboardStats()
-    console.log(allStats.data);
-
-    const statsData = allStats?.data || {
+const UsageOverview = () => {
+    const [statsData, setStatsData] = useState({
         totalUsers: 0,
         totalCreators: 0,
         liveStreams: 0,
         scheduledStreams: 0,
         totalStreams: 0,
         reportedStreams: 0
-    };
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const allStats = await getDashboardStats();
+                console.log(allStats.data);
+
+                if (allStats?.data) {
+                    setStatsData(allStats.data);
+                }
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
+
+    if (loading) {
+        return <div className="text-[#FDD3C6] text-center py-8">Loading stats...</div>;
+    }
 
     const stats: StatCardProps[] = [
         {

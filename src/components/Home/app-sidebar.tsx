@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation"
 import { LayoutDashboardIcon, Settings, UserCircle2Icon } from "lucide-react"
 import { MdOutlineCategory } from "react-icons/md";
 import { BsFillCollectionPlayFill } from "react-icons/bs";
-import LoggedUser from "@/app/(auth)/loggedUser/LoggedUser"
+import LoggedUser from "@/auth/loggedUser/LoggedUser"
 
 const data = {
     navMain: [
