@@ -1,5 +1,6 @@
 "use client";
 
+import { getCurrentUser } from "@/Server/Auth/Index";
 import { createContext, useContext, useEffect, useState } from "react";
 
 export interface IUser {
@@ -29,15 +30,8 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const handleUser = async () => {
         try {
             setIsLoading(true);
-            const res = await fetch("/api/me", { credentials: "include" });
-
-            if (!res.ok) {
-                setUser(null);
-                return;
-            }
-
-            const data = await res.json();
-            setUser(data);
+            const userData = await getCurrentUser();
+            setUser(userData as IUser | null);
         } catch (error) {
             console.error("Error fetching user:", error);
             setUser(null);
@@ -45,6 +39,10 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        handleUser();
+    }, []);
 
     useEffect(() => {
         handleUser();

@@ -8,7 +8,7 @@ import {
     getPaginationRowModel,
     getFilteredRowModel,
 } from "@tanstack/react-table";
-import { Search, ChevronRight, ChevronLeft, Edit3, Upload, Plus } from "lucide-react";
+import { Search, ChevronRight, ChevronLeft, Edit3, Upload, Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -17,12 +17,22 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable } from "@/Shared/Table/Table";
-import { getAllCategory, createCategory, updateCategory } from "@/Server/Category";
+import { getAllCategory, createCategory, updateCategory, deleteCategory } from "@/Server/Category";
 import { toast } from "sonner";
 
 interface Category {
@@ -54,6 +64,11 @@ export default function CategoryTable() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingCategory, setEditingCategory] = useState<CategoryTableData | null>(null);
 
+    // Delete dialog states
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [deletingCategory, setDeletingCategory] = useState<CategoryTableData | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     // Form states
     const [categoryName, setCategoryName] = useState("");
     const [mainPhoto, setMainPhoto] = useState<string>("");
@@ -82,7 +97,6 @@ export default function CategoryTable() {
                 toast.error(response.message || "Failed to fetch categories");
             }
         } catch (error) {
-            // console.error("Error fetching categories:", error);
             toast.error(error as string || "An error occurred while fetching categories");
         } finally {
             setLoading(false);
@@ -144,6 +158,38 @@ export default function CategoryTable() {
         setMainPhotoFile(null);
         setCoverPhotoFile(null);
         setIsDialogOpen(true);
+    };
+
+    // Open delete confirmation dialog
+    const handleDeleteClick = (category: CategoryTableData) => {
+        setDeletingCategory(category);
+        setIsDeleteDialogOpen(true);
+    };
+
+    // Confirm delete category
+    const handleConfirmDelete = async () => {
+        if (!deletingCategory) return;
+
+        try {
+            setIsDeleting(true);
+
+            const response = await deleteCategory(deletingCategory._id);
+
+            if (response.success) {
+                toast.success("Category deleted successfully");
+                setIsDeleteDialogOpen(false);
+                setDeletingCategory(null);
+
+                // Refresh the categories list
+                fetchCategories();
+            } else {
+                toast.error(response.message || "Failed to delete category");
+            }
+        } catch (error) {
+            toast.error(error as string || "An error occurred while deleting the category");
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     // Save category (add or edit)
@@ -232,7 +278,6 @@ export default function CategoryTable() {
                 }
             }
         } catch (error) {
-            // console.error("Error saving category:", error);
             toast.error(error as string || "An error occurred while saving the category");
         } finally {
             setIsSubmitting(false);
@@ -323,10 +368,14 @@ export default function CategoryTable() {
             accessorKey: "action",
             header: () => <div className="text-center">Action</div>,
             cell: ({ row }) => (
-                <div className="flex justify-center">
+                <div className="flex justify-center items-center gap-4">
                     <Edit3
-                        className="cursor-pointer transition-colors hover:text-[#635BFF]"
+                        className="cursor-pointer transition-colors hover:text-[#4C2C22]"
                         onClick={() => handleEditCategory(row.original)}
+                    />
+                    <Trash
+                        className="cursor-pointer transition-colors hover:text-red-500"
+                        onClick={() => handleDeleteClick(row.original)}
                     />
                 </div>
             ),
@@ -592,6 +641,35 @@ export default function CategoryTable() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent className="bg-[#2A1810] border-[#4A3830] text-[#FDD3C6]">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-[#FDD3C6]">
+                            Delete Category
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-[#B8968A]">
+                            Are you sure you want to delete &quot;{deletingCategory?.name}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel
+                            className="bg-transparent border-[#4A3830] text-[#FDD3C6] hover:bg-[#36190F]"
+                            disabled={isDeleting}
+                        >
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmDelete}
+                            disabled={isDeleting}
+                            className="bg-red-600 text-white hover:bg-red-700"
+                        >
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </main>
     );
 }
