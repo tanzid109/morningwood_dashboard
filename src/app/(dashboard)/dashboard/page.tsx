@@ -1,4 +1,4 @@
-import DashboadOverview from '@/pages/DashboardHome/DashboadOverview';
+import DashboadOverview from '@/Pages/DashboardHome/DashboadOverview';
 import React from 'react';
 
 export const dynamic = 'force-dynamic';

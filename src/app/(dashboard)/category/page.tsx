@@ -1,4 +1,4 @@
-import CategoryTable from "@/pages/Category/CategoryTable";
+import CategoryTable from "@/Pages/Category/CategoryTable";
 
 const Category = () => {
     return (
