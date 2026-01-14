@@ -1,4 +1,4 @@
-import ContentTable from '@/pages/Content/Content';
+import ContentTable from '@/Pages/Content/Content';
 
 const Content = () => {
     return (

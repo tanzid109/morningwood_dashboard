@@ -1,4 +1,4 @@
-import CreatorTable from '@/pages/Creator/CreatorTable';
+import CreatorTable from '@/Pages/Creator/CreatorTable';
 import React from 'react';
 
 const Creators = () => {
