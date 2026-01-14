@@ -36,6 +36,7 @@ export default function Security() {
         },
     });
 
+
     const { formState: { isSubmitting } } = form;
 
     const onSubmit: SubmitHandler<PasswordFormData> = async (data) => {
