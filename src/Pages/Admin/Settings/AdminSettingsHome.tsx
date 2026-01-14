@@ -1,7 +1,9 @@
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Securty from './AdminSecurity';
-import UpdateAdminProfile from './UpdateAdminProfile';
+import Security from './AdminSecurity';
+import UpdateProfile from './UpdateAdminProfile';
+
+
 
 const AdminSettingsHome = () => {
     return (
@@ -13,8 +15,8 @@ const AdminSettingsHome = () => {
                     <TabsTrigger value="change">Change Image and Name</TabsTrigger>
                 </TabsList>
                 <Separator className='my-0' />
-                <TabsContent value="security"><Securty /></TabsContent>
-                <TabsContent value="change"><UpdateAdminProfile /></TabsContent>
+                <TabsContent value="security"><Security /></TabsContent>
+                <TabsContent value="change"><UpdateProfile /></TabsContent>
             </Tabs>
         </main>
     );
