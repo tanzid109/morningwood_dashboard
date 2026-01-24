@@ -259,7 +259,7 @@ export default function CategoryTable() {
                 };
 
                 const response = await createCategory(categoryData);
-
+                console.log(response);
                 if (response.success) {
                     toast.success("Category created successfully");
                     setIsDialogOpen(false);

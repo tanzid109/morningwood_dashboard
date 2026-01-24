@@ -84,7 +84,7 @@ export const createCategory = async (categoryData: FieldValues) => {
             formData.append("coverPhoto", categoryData.coverPhoto);
         }
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_API}/api/v1/admin/categories/create-category`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_API}/api/v1/admin/create-category`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${accessToken}`,
